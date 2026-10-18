@@ -35,10 +35,18 @@ On macOS/Linux use `.venv/bin/python` instead of `.venv/Scripts/python`.
 
 ## Run the demo
 
+`service/app/cache/` (Claude's extraction results) is not committed. On a new machine, build it once before the demo so nothing waits on the API live:
+
+```sh
+make warm      # reads both card guides and the Ridgeline policy; needs ANTHROPIC_API_KEY
+```
+
+It skips anything already cached (`make warm ARGS=--fresh` re-extracts), and needs no servers running. Without `make`: `.venv/Scripts/python service/warm_cache.py`.
+
 From the repo root, one terminal:
 
 ```sh
-npm run dev
+make demo      # same as: npm run dev
 ```
 
 This starts the store server (8001), the service (8000), the store (5173), and the extension build, with each line of output tagged by process. It keeps them running:

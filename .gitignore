@@ -8,6 +8,9 @@ __pycache__/
 .pytest_cache/
 service/backpocket.db
 
+# Claude extraction cache: rebuilt per machine with `make warm`
+service/app/cache/
+
 # Node
 node_modules/
 dist/
