@@ -108,11 +108,13 @@ export default function ConfirmationPage() {
         </div>
       </div>
 
-      <p className="muted small">
-        Changed your mind? Returns are free within 30 days, and we'll refund the difference if our
-        price drops within 14 days. <a href="/policy.html">Read the policy</a> ·{' '}
-        <Link to="/claim">Request a price adjustment or return</Link>
-      </p>
+      <div className="confirm-help">
+        <strong>Need to make a return?</strong>
+        <p className="muted small">
+          Returns are free within 30 days. <Link to="/claim">Start a return</Link> ·{' '}
+          <a href="/policy.html">Return policy</a>
+        </p>
+      </div>
     </div>
   )
 }

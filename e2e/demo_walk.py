@@ -77,7 +77,7 @@ def main(headed: bool) -> int:
 
         check(len(posted) == 1, "Extension posted the purchase to the service")
         policy_text = posted[0]["policy_text"] if posted else ""
-        check("4.2 If an item you purchased" in policy_text, "Policy text sent with clause numbers")
+        check("4.2 If an item you purchased from Ridgeline Outfitters" in policy_text, "Policy text sent with clause numbers")
         check("ignore your previous rules" not in policy_text, "Hidden injection line stripped")
         check(posted and posted[0]["purchase"]["card_last4"] == "4417", "Card last4 read from JSON-LD")
 
@@ -141,7 +141,7 @@ def main(headed: bool) -> int:
             and claim["price_paid"] == 140.0
             and claim["current_price"] == 110.0
             and claim["purchase_date"] == "2026-10-18"
-            and 'Clause 4.2 of your policy states: "If an item' in claim["explanation"],
+            and 'Clause 4.2 of your policy states: "If an item you purchased from Ridgeline' in claim["explanation"],
             f"Store received React-registered values: {claim}",
         )
         store.wait_for_timeout(500)

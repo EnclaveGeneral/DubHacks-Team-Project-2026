@@ -178,6 +178,16 @@ h3 {
   padding: 8px 16px;
 }
 
+.announcement a {
+  color: #fff;
+  font-weight: 600;
+  text-underline-offset: 2px;
+}
+
+.main-nav a.nav-sale {
+  color: var(--sale);
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -1023,6 +1033,61 @@ h3 {
 
 .claim-done .check {
   margin: 0 auto 12px;
+}
+
+.help-intro {
+  color: var(--ink-2);
+}
+
+.faq-title {
+  margin: 24px 0 4px;
+  font-size: 15px;
+}
+
+.faq {
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+
+.faq:last-of-type {
+  border-bottom: 1px solid var(--line);
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.faq p {
+  margin: 8px 0 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.form-note {
+  margin: -4px 0 4px;
+}
+
+.confirm-help {
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: var(--sand);
+}
+
+.confirm-help p {
+  margin: 4px 0 0;
+}
+
+.empty-state {
+  padding: 40px 16px;
+  text-align: center;
+  border-radius: var(--radius);
+  background: var(--sand);
+}
+
+.empty-state p {
+  margin: 6px 0 0;
 }
 
 /* Sort + misc */

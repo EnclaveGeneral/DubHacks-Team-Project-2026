@@ -10,6 +10,11 @@ from .schemas import ClockState
 BASE_DATE = "2026-10-18"  # day 0 (demo purchase date)
 
 
+# One shared client: creating an httpx client costs ~0.4 s (SSL setup), which
+# made every panel poll slow enough to pile up behind the purchase lock.
+http = httpx.Client(timeout=2)
+
+
 def store_server_url() -> str:
     # Read at call time so load_dotenv() in main.py has already run.
     return os.environ.get("STORE_SERVER_URL", "http://127.0.0.1:8001")
@@ -28,6 +33,6 @@ def set_day(day: int) -> ClockState:
 def push_to_store(day: int) -> None:
     # The store never calls BackPocket; we push the day to it.
     try:
-        httpx.post(f"{store_server_url()}/admin/clock", json={"day": day}, timeout=2)
+        http.post(f"{store_server_url()}/admin/clock", json={"day": day})
     except httpx.HTTPError:
         pass  # store server down; prices will be stale until next push

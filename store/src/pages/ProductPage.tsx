@@ -192,7 +192,7 @@ export default function ProductPage() {
           <ul className="perks small">
             <li>Free shipping, arrives in 3–5 business days</li>
             <li>
-              Free 30-day returns · price adjustments within 14 days (<a href="/policy.html">policy</a>)
+              Free returns within 30 days (<a href="/policy.html">details</a>)
             </li>
           </ul>
 
@@ -214,9 +214,9 @@ export default function ProductPage() {
           <details>
             <summary>Shipping, returns &amp; warranty</summary>
             <p>
-              Free standard shipping on orders over $75. Return unworn items within 30 days. If our
-              price drops within 14 days of your purchase, request a price adjustment for the
-              difference. Outerwear carries a 1-year warranty. <a href="/policy.html">Read the full policy</a>.
+              Free standard shipping on orders over $75. Return unworn items with tags within 30
+              days for a full refund. Outerwear carries a 1-year warranty against defects.{' '}
+              <a href="/policy.html">Read the full policy</a>.
             </p>
           </details>
         </div>

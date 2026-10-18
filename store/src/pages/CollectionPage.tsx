@@ -4,7 +4,9 @@ import { usePrices } from '../api'
 import { PRODUCTS, type Product } from '../catalog'
 import ProductCard from '../components/ProductCard'
 
-const COLLECTIONS: Record<string, { title: string; filter: (p: Product) => boolean }> = {
+type Prices = Record<string, number>
+
+const COLLECTIONS: Record<string, { title: string; filter: (p: Product, prices: Prices) => boolean }> = {
   new: { title: 'New arrivals', filter: () => true },
   men: { title: "Men's", filter: (p) => p.gender !== 'Women' },
   women: { title: "Women's", filter: (p) => p.gender !== 'Men' },
@@ -12,6 +14,7 @@ const COLLECTIONS: Record<string, { title: string; filter: (p: Product) => boole
   layers: { title: 'Layers', filter: (p) => p.category === 'Layers' },
   bottoms: { title: 'Trail pants', filter: (p) => p.category === 'Bottoms' },
   accessories: { title: 'Gear & accessories', filter: (p) => p.category === 'Accessories' },
+  sale: { title: 'Sale', filter: (p, prices) => prices[p.sku] < p.listPrice },
 }
 
 type Sort = 'featured' | 'low' | 'high'
@@ -22,7 +25,7 @@ export default function CollectionPage() {
   const [sort, setSort] = useState<Sort>('featured')
   const collection = COLLECTIONS[handle] ?? COLLECTIONS.new
 
-  const items = PRODUCTS.filter(collection.filter)
+  const items = PRODUCTS.filter((p) => collection.filter(p, prices))
   if (sort !== 'featured') {
     items.sort((a, b) => (sort === 'low' ? 1 : -1) * (prices[a.sku] - prices[b.sku]))
   }
@@ -43,7 +46,15 @@ export default function CollectionPage() {
           </select>
         </label>
       </div>
-      <p className="muted">{items.length} products</p>
+      <p className="muted">
+        {items.length} {items.length === 1 ? 'product' : 'products'}
+      </p>
+      {items.length === 0 && (
+        <div className="empty-state">
+          <strong>Nothing on sale right now.</strong>
+          <p className="muted">New markdowns land often. <Link to="/collections/new">Shop new arrivals</Link></p>
+        </div>
+      )}
       <div className="product-grid">
         {items.map((p) => (
           <ProductCard key={p.sku} product={p} price={prices[p.sku]} />

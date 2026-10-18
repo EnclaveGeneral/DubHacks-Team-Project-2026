@@ -336,4 +336,6 @@ Checkpoints in **bold** are the moments the three tracks must meet. Don't skip t
 - **Clock owned by the service**, pushed to the store server. The store never reads BackPocket.
 - **Filed claims stay pending**: they never change later refund or points numbers (section 2).
 - **Policy cleaning happens in the extension** (attribute-based stripping), not on the server.
+- **Real retailers: policy reading only.** "Read this page" reads the shopper's open tab with `chrome.scripting` (computed-style hidden-text stripping on the live DOM) and extracts terms plus `how_to_request`. Purchases from those stores are added by hand, lower prices are reported by the shopper, and stores without a web form get a drafted message instead of a filled form. Real confirmation-page detection and automatic price watching are out of scope. Checked against Target's live page by `e2e/real_policy.py`.
+- **Ridgeline's policy text** is modeled on real retailers' published wording (sources in `content/README.md`).
 - Deterministic form fields filled in code; the LLM maps unfamiliar labels and writes the justification.

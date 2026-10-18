@@ -48,7 +48,7 @@ def _store_price(sku: str) -> tuple[int, float] | None:
     """(store's day, price). Keyed by the store's own day so a poll that races
     a clock change can't file today's price under yesterday."""
     try:
-        r = httpx.get(f"{clock.store_server_url()}/price/{sku}", timeout=2)
+        r = clock.http.get(f"{clock.store_server_url()}/price/{sku}")
         r.raise_for_status()
         body = r.json()
         return int(body["day"]), float(body["price"])
@@ -86,6 +86,16 @@ def mark_claim_filed(order_id: str, claim_type: str, day: int) -> TrackedPurchas
             return None
         if claim_type not in tp.claims_filed:
             tp.claims_filed.append(claim_type)
+        return refresh(tp, day)
+
+
+def report_price(order_id: str, price: float, day: int) -> TrackedPurchase | None:
+    with lock:
+        tp = load(order_id)
+        if tp is None:
+            return None
+        tp.price_history[day] = round(price, 2)
+        tp.lowest_seen = min(tp.lowest_seen, price)
         return refresh(tp, day)
 
 

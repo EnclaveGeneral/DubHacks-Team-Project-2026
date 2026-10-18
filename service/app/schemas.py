@@ -43,7 +43,8 @@ class MerchantPolicy(BaseModel):
     exchange_window_days: Cited[int]
     price_match: PriceMatch
     manufacturer_warranty_months: Cited[int]
-    claim_form_url: str
+    claim_form_url: str  # "" when the store has no web form (claims go by chat, phone, or email)
+    how_to_request: Cited[str] = Cited()  # e.g. "chat online or call 1-800-..."
 
 
 # ---------- Card benefits ----------
@@ -95,7 +96,18 @@ class Purchase(BaseModel):
 
 class NewPurchaseRequest(BaseModel):
     purchase: Purchase
-    policy_text: str  # cleaned by the extension (attribute-based stripping)
+    policy_text: str  # cleaned by the extension
+    manual: bool = False  # entered by the shopper: keep their purchase_day instead of "today"
+
+
+class ReadPolicyRequest(BaseModel):
+    url: str
+    text: str  # visible text of the shopper's open tab
+    site_name: str | None = None
+
+
+class ReportPrice(BaseModel):
+    price: float
 
 
 # ---------- Engine output ----------

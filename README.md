@@ -48,6 +48,12 @@ Open http://localhost:5173 for the store. Reset everything with the **Reset** bu
 
 Demo flow: open the **Ridgeline Rain Jacket**, pick a size, **Buy now** → **Place order** → on the confirmation page tick **Protect this purchase** → skip to day **3** in the panel → **Prepare claim form** → add an email and submit the form yourself → skip to days **20** and **28**.
 
+### Real stores
+
+BackPocket also reads policies on real retailers' sites. Open a store's return or price-adjustment policy page (for example [Target's Price Match Guarantee](https://www.target.com/help/articles/policies-guidelines/price-match-guarantee)) and choose **Read this page** in the panel. It shows the windows, how to ask, and the conditions, each with the page's own wording. From there, **Track a purchase** adds an order by hand. BackPocket can't check prices on real sites, so use **Saw a lower price?** when you spot a drop; for stores without a web form, **Draft a request message** writes a message citing the policy for you to send through the store's chat or email.
+
+Reading any page needs the extension's `<all_urls>` host permission. It only reads a page when you click **Read this page**.
+
 ## Tests
 
 ```sh
@@ -69,3 +75,5 @@ cd extension && npx plasmo build && cd ..
 ```
 
 It resets the demo first. The first run on a new policy text calls Claude (about 15 s); later runs use `service/app/cache/`.
+
+`e2e/real_policy.py` runs the same extension against Target's live price-match page (needs internet; one Claude call per new version of the page text).

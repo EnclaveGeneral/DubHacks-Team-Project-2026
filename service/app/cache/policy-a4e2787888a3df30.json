@@ -1,0 +1,95 @@
+{
+  "merchant_name": "Target",
+  "how_to_request": {
+    "value": "chat online",
+    "quote": "Chat with us online.",
+    "clause": null,
+    "confidence": "high"
+  },
+  "return_window_days": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  },
+  "exchange_window_days": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  },
+  "price_match_allowed": {
+    "value": true,
+    "quote": "It may qualify for a price match if it's an eligible Target product, bought from Target today, or in the past 14 days.",
+    "clause": null,
+    "confidence": "high"
+  },
+  "price_match_window_days": {
+    "value": 14,
+    "quote": "It may qualify for a price match if it's an eligible Target product, bought from Target today, or in the past 14 days.",
+    "clause": null,
+    "confidence": "high"
+  },
+  "price_match_conditions": [
+    {
+      "value": "Must be an eligible Target product bought from Target today or in the past 14 days",
+      "quote": "It may qualify for a price match if it's an eligible Target product, bought from Target today, or in the past 14 days.",
+      "clause": null,
+      "confidence": "high"
+    },
+    {
+      "value": "Must be the identical item (brand name, size, weight, color, quantity and model number) and the price is lower on Target.com or at the local Target store",
+      "quote": "It must be an identical item, brand name, size, weight, color, quantity and model number and the price is lower from Target.com or your local Target store.",
+      "clause": null,
+      "confidence": "high"
+    },
+    {
+      "value": "Screenshots or pictures of the current price are not accepted as proof",
+      "quote": "Screenshots or pictures cannot be accepted.",
+      "clause": null,
+      "confidence": "high"
+    },
+    {
+      "value": "For online purchases, have the order number and item information ready",
+      "quote": "Have your order number and item information ready.",
+      "clause": null,
+      "confidence": "high"
+    },
+    {
+      "value": "Not available if bought in a Target store and the lower price is from a different Target store",
+      "quote": "If you bought it in a Target store, and the lower price is from a different Target store.",
+      "clause": null,
+      "confidence": "high"
+    },
+    {
+      "value": "Not available if a promotional Target GiftCard was received with the original purchase",
+      "quote": "If you received a promotional Target GiftCard as part of the original purchase.",
+      "clause": null,
+      "confidence": "high"
+    },
+    {
+      "value": "Not available if the product currently has a Target GiftCard offered as part of a promotion",
+      "quote": "Or, if the product currently has a Target GiftCard offered as part of a promotion.",
+      "clause": null,
+      "confidence": "high"
+    },
+    {
+      "value": "Not available when also using a Registry completion coupon or other Target coupons",
+      "quote": "You're also using a Registry completion coupon or other Target coupons.",
+      "clause": null,
+      "confidence": "high"
+    },
+    {
+      "value": "Not available if the item is on clearance, closeout, liquidation, refurbished or is a typographical error",
+      "quote": "The item is on clearance, closeout, liquidation, refurbished or is a typographical error.",
+      "clause": null,
+      "confidence": "high"
+    }
+  ],
+  "manufacturer_warranty_months": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  }
+}

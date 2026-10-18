@@ -20,7 +20,8 @@ export interface MerchantPolicy {
     conditions: Cited<string>[]
   }
   manufacturer_warranty_months: Cited<number>
-  claim_form_url: string
+  claim_form_url: string // "" when claims go by chat, phone, or email
+  how_to_request: Cited<string>
 }
 
 export interface Protection {

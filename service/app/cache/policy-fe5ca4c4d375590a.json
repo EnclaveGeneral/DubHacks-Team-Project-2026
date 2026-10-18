@@ -1,0 +1,77 @@
+{
+  "merchant_name": "Ridgeline Outfitters",
+  "how_to_request": {
+    "value": "submit a request on the Returns & Refunds page or contact Customer Service with your order number",
+    "quote": "To request a price adjustment for an online order, submit a request on our Returns & Refunds page or contact Customer Service with your order number.",
+    "clause": "4.6",
+    "confidence": "high"
+  },
+  "return_window_days": {
+    "value": 30,
+    "quote": "Merchandise that is unworn, unwashed, and in new condition with original tags attached may be returned within 30 days of the purchase date for a refund to the original form of payment.",
+    "clause": "3.1",
+    "confidence": "high"
+  },
+  "exchange_window_days": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  },
+  "price_match_allowed": {
+    "value": true,
+    "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
+    "clause": "4.2",
+    "confidence": "high"
+  },
+  "price_match_window_days": {
+    "value": 14,
+    "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
+    "clause": "4.2",
+    "confidence": "high"
+  },
+  "price_match_conditions": [
+    {
+      "value": "Only one price adjustment per item (one-time)",
+      "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
+      "clause": "4.2",
+      "confidence": "high"
+    },
+    {
+      "value": "Must be the identical item, in the same size and color, offered for sale by Ridgeline Outfitters",
+      "quote": "Price adjustments apply only to the identical item, in the same size and color, offered for sale by Ridgeline Outfitters.",
+      "clause": "4.3",
+      "confidence": "high"
+    },
+    {
+      "value": "Item must not have been purchased with a promotion code or other discount, unless the only discount was free shipping",
+      "quote": "Items purchased with a promotion code or other discount are not eligible for a price adjustment, unless the only discount used was free shipping.",
+      "clause": "4.4",
+      "confidence": "high"
+    },
+    {
+      "value": "Final Sale and clearance items are excluded",
+      "quote": "Final Sale and clearance items are also excluded.",
+      "clause": "4.4",
+      "confidence": "high"
+    },
+    {
+      "value": "Lower price must not result from typographical errors, limited-quantity offers, or member-only promotions",
+      "quote": "Lower prices resulting from typographical errors, limited-quantity offers, or member-only promotions are not eligible.",
+      "clause": "4.5",
+      "confidence": "high"
+    },
+    {
+      "value": "Order confirmation, receipt, or packing slip is required",
+      "quote": "Your order confirmation, receipt, or packing slip is required.",
+      "clause": "4.6",
+      "confidence": "high"
+    }
+  ],
+  "manufacturer_warranty_months": {
+    "value": 12,
+    "quote": "Ridgeline outerwear is warranted against defects in materials and workmanship for one year from the purchase date.",
+    "clause": "6.1",
+    "confidence": "high"
+  }
+}

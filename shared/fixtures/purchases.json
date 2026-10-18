@@ -16,33 +16,33 @@
       "source_url": "http://localhost:5173/policy.html",
       "return_window_days": {
         "value": 30,
-        "quote": "Unworn, unwashed items with original tags attached may be returned within 30 days of the purchase date for a full refund to the original payment method.",
+        "quote": "Merchandise that is unworn, unwashed, and in new condition with original tags attached may be returned within 30 days of the purchase date for a refund to the original form of payment.",
         "clause": "3.1",
         "confidence": "high"
       },
       "exchange_window_days": {
-        "value": 30,
-        "quote": "Items may be exchanged for a different size or color within 30 days of the purchase date, subject to availability.",
-        "clause": "5.1",
+        "value": null,
+        "quote": null,
+        "clause": null,
         "confidence": "high"
       },
       "price_match": {
         "allowed": {
           "value": true,
-          "quote": "If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+          "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
           "clause": "4.2",
           "confidence": "high"
         },
         "window_days": {
           "value": 14,
-          "quote": "If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+          "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
           "clause": "4.2",
           "confidence": "high"
         },
         "conditions": [
           {
-            "value": "Same item, same size and color, sold by Ridgeline Outfitters",
-            "quote": "Price adjustments apply only to the same item in the same size and color, sold by Ridgeline Outfitters.",
+            "value": "Identical item, same size and color, offered by Ridgeline Outfitters",
+            "quote": "Price adjustments apply only to the identical item, in the same size and color, offered for sale by Ridgeline Outfitters.",
             "clause": "4.3",
             "confidence": "high"
           }
@@ -50,7 +50,7 @@
       },
       "manufacturer_warranty_months": {
         "value": 12,
-        "quote": "Ridgeline outerwear is covered by a 1-year manufacturer warranty against defects in materials and workmanship from the purchase date.",
+        "quote": "Ridgeline outerwear is warranted against defects in materials and workmanship for one year from the purchase date.",
         "clause": "6.1",
         "confidence": "high"
       },
@@ -66,7 +66,7 @@
         "long_term": false,
         "citation": {
           "value": 14,
-          "quote": "If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+          "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
           "clause": "4.2",
           "confidence": "high"
         }
@@ -80,7 +80,7 @@
         "long_term": false,
         "citation": {
           "value": 30,
-          "quote": "Unworn, unwashed items with original tags attached may be returned within 30 days of the purchase date for a full refund to the original payment method.",
+          "quote": "Merchandise that is unworn, unwashed, and in new condition with original tags attached may be returned within 30 days of the purchase date for a refund to the original form of payment.",
           "clause": "3.1",
           "confidence": "high"
         }
@@ -94,7 +94,7 @@
         "long_term": true,
         "citation": {
           "value": 12,
-          "quote": "Ridgeline outerwear is covered by a 1-year manufacturer warranty against defects in materials and workmanship from the purchase date.",
+          "quote": "Ridgeline outerwear is warranted against defects in materials and workmanship for one year from the purchase date.",
           "clause": "6.1",
           "confidence": "high"
         }

@@ -7,11 +7,16 @@
       "kind": "price_drop_claimable",
       "title": "Price dropped $30",
       "body": "Clause 4.2 allows a price match within 14 days; 11 days left. Net after points reversal: about $29 (estimate).",
-      "money": { "refund": 30.0, "points_reversed": 90, "net_estimate": 29.1, "is_estimate": true },
+      "money": {
+        "refund": 30.0,
+        "points_reversed": 90,
+        "net_estimate": 29.1,
+        "is_estimate": true
+      },
       "citations": [
         {
           "value": 14,
-          "quote": "If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+          "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
           "clause": "4.2",
           "confidence": "high"
         },
@@ -38,7 +43,7 @@
       "citations": [
         {
           "value": 14,
-          "quote": "If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+          "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
           "clause": "4.2",
           "confidence": "high"
         }
@@ -54,11 +59,16 @@
       "kind": "window_closing",
       "title": "Return window closes in 2 days",
       "body": "Returning refunds $140 and reverses about 420 points (before pending price adjustment). The decision is yours.",
-      "money": { "refund": 140.0, "points_reversed": 420, "net_estimate": 135.8, "is_estimate": true },
+      "money": {
+        "refund": 140.0,
+        "points_reversed": 420,
+        "net_estimate": 135.8,
+        "is_estimate": true
+      },
       "citations": [
         {
           "value": 30,
-          "quote": "Unworn, unwashed items with original tags attached may be returned within 30 days of the purchase date for a full refund to the original payment method.",
+          "quote": "Merchandise that is unworn, unwashed, and in new condition with original tags attached may be returned within 30 days of the purchase date for a refund to the original form of payment.",
           "clause": "3.1",
           "confidence": "high"
         },

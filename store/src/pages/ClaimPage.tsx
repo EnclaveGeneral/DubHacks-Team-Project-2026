@@ -52,23 +52,38 @@ export default function ClaimPage() {
   return (
     <div className="wrap section">
       <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link to="/">Home</Link> / <span>Help</span> / <span>Price adjustments &amp; returns</span>
+        <Link to="/">Home</Link> / <span>Customer service</span> / <span>Returns &amp; refunds</span>
       </nav>
       <div className="help-grid">
         <aside className="help-aside">
-          <h1 className="page-title">Price adjustments &amp; returns</h1>
-          <div className="help-card">
-            <strong>Price dropped?</strong>
-            <p>If we lower the price of something you bought within 14 days, we'll refund the difference once.</p>
-          </div>
-          <div className="help-card">
-            <strong>Returns</strong>
-            <p>Unworn items with tags can be returned within 30 days for a full refund.</p>
-          </div>
-          <p className="small">
-            <a href="/policy.html">Read the full policy</a>
+          <h1 className="page-title">Returns &amp; refunds</h1>
+          <p className="help-intro">
+            Unworn items with tags can be returned within 30 days for a full refund to your original
+            payment method.
           </p>
-          <p className="muted small">We reply to most requests within 2 business days.</p>
+          <h2 className="faq-title">Common questions</h2>
+          <details className="faq">
+            <summary>When will I get my refund?</summary>
+            <p>Within 3–5 business days after we receive and process your return, to your original form of payment.</p>
+          </details>
+          <details className="faq">
+            <summary>What can't be returned?</summary>
+            <p>Items marked Final Sale, and anything worn, washed, or missing its tags.</p>
+          </details>
+          <details className="faq">
+            <summary>Do you offer price adjustments?</summary>
+            <p>
+              Once per item, if we lower our own price within 14 days after your purchase. We don't match other retailers. Choose
+              “Price adjustment” as the request type.
+            </p>
+          </details>
+          <details className="faq">
+            <summary>Is my item under warranty?</summary>
+            <p>Outerwear is covered for 1 year against defects in materials and workmanship.</p>
+          </details>
+          <p className="small">
+            <a href="/policy.html">Full return &amp; warranty policy</a>
+          </p>
         </aside>
 
         <div className="form-card">
@@ -81,7 +96,8 @@ export default function ClaimPage() {
             </div>
           ) : (
             <form id="claim-form" onSubmit={onSubmit}>
-              <h2>Submit a request</h2>
+              <h2>Start a request</h2>
+              <p className="muted small form-note">We reply to most requests within 2 business days.</p>
 
               <label htmlFor="claim_type">Request type</label>
               <select id="claim_type" value={form.claim_type} onChange={set('claim_type')} required>

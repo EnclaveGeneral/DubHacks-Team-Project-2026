@@ -47,26 +47,26 @@ const html = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/site.css">
-<title>Returns, price adjustments &amp; warranty | Ridgeline Outfitters</title>
+<title>Return &amp; warranty policy | Ridgeline Outfitters</title>
 </head>
 <body>
-<div class="announcement">Free shipping over $75 · 30-day returns · 14-day price adjustments</div>
+<div class="announcement">Free shipping on orders over $75. Free returns. <a href="/collections/new">Shop fall arrivals</a></div>
 <header class="site-header">
   <div class="wrap header-row">
     ${logo}
     <nav class="main-nav" aria-label="Shop">
-      <a href="/collections/new">New</a><a href="/collections/men">Men</a><a href="/collections/women">Women</a><a href="/collections/outerwear">Outerwear</a><a href="/collections/accessories">Gear</a>
+      <a href="/collections/new">New</a><a href="/collections/men">Men</a><a href="/collections/women">Women</a><a href="/collections/outerwear">Outerwear</a><a href="/collections/accessories">Gear</a><a href="/collections/sale" class="nav-sale">Sale</a>
     </nav>
   </div>
 </header>
 <main class="site-main">
 <div class="wrap section policy">
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a> / <span>Help</span> / <span>Policies</span></nav>
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a> / <span>Customer service</span> / <span>Policies</span></nav>
 <h1 class="page-title">${esc(title)}</h1>
 <section id="store-policy" data-backpocket="policy">
 ${body.join('\n')}
 </section>
-<p class="small"><a href="/claim">Request a price adjustment or return</a></p>
+<p class="small">Questions? <a href="/claim">Contact customer service</a></p>
 </div>
 </main>
 <footer class="site-footer">

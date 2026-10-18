@@ -21,7 +21,10 @@ from .schemas import (
     ClockState,
     DraftRequest,
     DraftResponse,
+    MerchantPolicy,
     NewPurchaseRequest,
+    ReadPolicyRequest,
+    ReportPrice,
     SelectedCard,
     TrackedPurchase,
 )
@@ -79,7 +82,7 @@ def demo_reset():
     with tracking.lock:
         db.reset()
     try:
-        httpx.post(f"{clock.store_server_url()}/admin/reset", timeout=2)
+        clock.http.post(f"{clock.store_server_url()}/admin/reset")
     except httpx.HTTPError:
         pass
     try:
@@ -126,7 +129,7 @@ def add_purchase(body: NewPurchaseRequest, fresh: bool = False):
     if not body.policy_text.strip():
         raise HTTPException(400, "policy_text is empty")
     day = clock.get().day
-    purchase = body.purchase.model_copy(update={"purchase_day": day})
+    purchase = body.purchase if body.manual else body.purchase.model_copy(update={"purchase_day": day})
     with tracking.lock:
         existing = tracking.load(purchase.order_id)
         if existing and not fresh:
@@ -143,6 +146,28 @@ def add_purchase(body: NewPurchaseRequest, fresh: bool = False):
     )
     with tracking.lock:
         return tracking.refresh(tp, day)
+
+
+@app.post("/policies/read", response_model=MerchantPolicy)
+def read_policy(body: ReadPolicyRequest, fresh: bool = False):
+    """Extract terms from the policy page open in the shopper's tab (any store)."""
+    if len(body.text.strip()) < 200:
+        raise HTTPException(400, "This page doesn't have enough text to be a policy.")
+    try:
+        return extract.merchant_policy(body.text, body.site_name, body.url, "", fresh=fresh)
+    except (extract.ExtractionError, anthropic.AnthropicError) as e:
+        raise HTTPException(502, f"Couldn't read this page's policy: {e}")
+
+
+@app.post("/purchases/{order_id}/price", response_model=TrackedPurchase)
+def report_price(order_id: str, body: ReportPrice):
+    """A lower price the shopper saw (for stores BackPocket can't check itself)."""
+    if body.price <= 0:
+        raise HTTPException(400, "price must be positive")
+    tp = tracking.report_price(order_id, body.price, clock.get().day)
+    if tp is None:
+        raise HTTPException(404, "unknown order")
+    return tp
 
 
 @app.get("/purchases", response_model=list[TrackedPurchase])

@@ -40,7 +40,8 @@ character for character. Do not paraphrase, shorten, or join sentences. Use null
 when value is null.
 - clause: the number printed before that sentence (for example "4.2"), or null.
 - confidence: "high" if the sentence states the value directly, "low" if you had \
-to infer it.
+to infer it. Converting a stated amount to the field's unit (for example "one \
+year" to 12 months) still counts as stated directly.
 
 Never guess a value the document does not support. A missing term is null."""
 
@@ -93,6 +94,8 @@ def _verify_all(obj: BaseModel, source_norm: str) -> None:
 
 
 class PolicyExtraction(BaseModel):
+    merchant_name: str | None
+    how_to_request: Cited[str]
     return_window_days: Cited[int]
     exchange_window_days: Cited[int]
     price_match_allowed: Cited[bool]
@@ -118,14 +121,17 @@ class BenefitsExtraction(BaseModel):
 
 
 POLICY_TASK = """Extract the store's post-purchase terms:
+- merchant_name: the store's name as the document uses it, or null.
+- how_to_request: how a shopper who bought online asks for a price adjustment (or, if none is described, a return): the channel and contact details in a few words, for example "chat online or call 1-800-555-0100" or "submit the online request form". If the document only describes in-store requests, give that. The value must come from the quoted sentence alone.
 - return_window_days: days after purchase that a return is accepted.
 - exchange_window_days: days after purchase that an exchange is accepted.
 - price_match_allowed: true if the store adjusts the price when its own price \
 drops after purchase; false if the document says it does not; null if not mentioned.
 - price_match_window_days: days after purchase that a price adjustment can be requested.
 - price_match_conditions: each condition a price adjustment must meet, one per item.
-- manufacturer_warranty_months: length of the manufacturer warranty in months \
-(1 year = 12)."""
+- manufacturer_warranty_months: length of the product's original warranty against \
+defects, in months (1 year = 12). This includes a warranty the store gives on its \
+own brand; it does not include extended warranties sold separately."""
 
 BENEFITS_TASK = """Extract the card's rewards and purchase protections:
 - earn_rate_points_per_dollar: points earned per $1. For percentage cash back \
@@ -173,8 +179,11 @@ def _call(task: str, document: str, output_format: type[BaseModel]) -> BaseModel
     return response.parsed_output
 
 
-def _cached(kind: str, text: str, fresh: bool, run):
-    key = hashlib.sha256(f"{kind}:{MODEL}:{normalize(text)}".encode()).hexdigest()[:16]
+def _cached(kind: str, task: str, text: str, fresh: bool, run):
+    # Keyed on the model, prompts, and text, so editing a prompt re-extracts.
+    key = hashlib.sha256(
+        f"{kind}:{MODEL}:{SYSTEM}:{task}:{normalize(text)}".encode()
+    ).hexdigest()[:16]
     path = CACHE_DIR / f"{kind}-{key}.json"
     if path.exists() and not fresh:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -185,17 +194,22 @@ def _cached(kind: str, text: str, fresh: bool, run):
 
 
 def merchant_policy(
-    text: str, merchant: str, source_url: str, claim_form_url: str, fresh: bool = False
+    text: str,
+    merchant: str | None,
+    source_url: str,
+    claim_form_url: str,
+    fresh: bool = False,
 ) -> MerchantPolicy:
     def run():
         ext = _call(POLICY_TASK, text, PolicyExtraction)
         return ext.model_dump()
 
-    ext = PolicyExtraction.model_validate(_cached("policy", text, fresh, run))
+    ext = PolicyExtraction.model_validate(_cached("policy", POLICY_TASK, text, fresh, run))
     _verify_all(ext, normalize(text))
     return MerchantPolicy(
-        merchant=merchant,
+        merchant=merchant or ext.merchant_name or "This store",
         source_url=source_url,
+        how_to_request=ext.how_to_request,
         return_window_days=ext.return_window_days,
         exchange_window_days=ext.exchange_window_days,
         price_match=PriceMatch(
@@ -222,7 +236,7 @@ def card_benefits(
         ext = _call(BENEFITS_TASK, text, BenefitsExtraction)
         return ext.model_dump()
 
-    ext = BenefitsExtraction.model_validate(_cached("benefits", text, fresh, run))
+    ext = BenefitsExtraction.model_validate(_cached("benefits", BENEFITS_TASK, text, fresh, run))
     _verify_all(ext, normalize(text))
 
     protections = []

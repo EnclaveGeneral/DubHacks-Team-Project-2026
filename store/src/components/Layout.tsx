@@ -34,7 +34,8 @@ function Header() {
   return (
     <>
       <div className="announcement">
-        Free shipping over $75 · 30-day returns · 14-day price adjustments
+        Free shipping on orders over $75. Free returns.{' '}
+        <Link to="/collections/new">Shop fall arrivals</Link>
       </div>
       <header className="site-header">
         <div className="wrap header-row">
@@ -45,6 +46,9 @@ function Header() {
             <NavLink to="/collections/women">Women</NavLink>
             <NavLink to="/collections/outerwear">Outerwear</NavLink>
             <NavLink to="/collections/accessories">Gear</NavLink>
+            <NavLink to="/collections/sale" className="nav-sale">
+              Sale
+            </NavLink>
           </nav>
           <div className="header-icons">
             <button className="icon-btn" aria-label="Search">
@@ -78,13 +82,14 @@ function Footer() {
           <Link to="/collections/women">Women</Link>
           <Link to="/collections/outerwear">Outerwear</Link>
           <Link to="/collections/accessories">Gear</Link>
+          <Link to="/collections/sale">Sale</Link>
         </div>
         <div>
-          <h4>Help</h4>
-          <Link to="/claim">Price adjustments &amp; returns</Link>
-          <a href="/policy.html">Return &amp; warranty policy</a>
-          <a href="/policy.html#clause-6.1">Warranty</a>
-          <Link to="/cart">Your bag</Link>
+          <h4>Customer service</h4>
+          <Link to="/claim">Returns &amp; exchanges</Link>
+          <a href="/policy.html">Return policy</a>
+          <a href="/policy.html#clause-6.1">Warranty &amp; repairs</a>
+          <Link to="/claim">Contact us</Link>
         </div>
         <div>
           <h4>Stay in the loop</h4>

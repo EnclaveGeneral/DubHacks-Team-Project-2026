@@ -53,6 +53,33 @@ export function localDraft(
   return values
 }
 
+// For stores without a web claim form: a message to paste into the store's
+// chat or email, quoting the clause it relies on.
+export function draftMessage(tp: TrackedPurchase, alert: Alert, clock: ClockState): string {
+  const p = tp.purchase
+  const date = new Date(`${isoDate(clock.base_date, p.purchase_day)}T12:00:00Z`).toLocaleDateString(
+    "en-US",
+    { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" }
+  )
+  const refund = alert.money?.refund ?? 0
+  const current = p.price_paid - refund
+  const cite = alert.citations[0]
+  const policyRef = cite?.quote
+    ? `Your policy${cite.clause ? ` (section ${cite.clause})` : ""} says: "${cite.quote}"`
+    : ""
+  return [
+    "Hi,",
+    "",
+    `I bought the ${p.item_name} on ${date} for $${p.price_paid.toFixed(2)}` +
+      (p.order_id && !p.order_id.startsWith("M-") ? ` (order ${p.order_id}).` : "."),
+    `It's now listed at $${current.toFixed(2)}. ${policyRef}`.trim(),
+    "",
+    `Could you please adjust my purchase by the $${refund.toFixed(2)} difference? I can provide my receipt or order confirmation.`,
+    "",
+    "Thank you!"
+  ].join("\n")
+}
+
 async function activeTab(): Promise<chrome.tabs.Tab> {
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
   if (!tab?.id) throw new Error("No active tab.")

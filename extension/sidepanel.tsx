@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type FormEvent } from "react"
 
 import PriceChart from "~components/PriceChart"
 import {
@@ -7,16 +7,21 @@ import {
   getClock,
   getPurchases,
   getSelectedCard,
+  readPolicy,
+  reportPrice,
   resetDemo,
   selectCard,
-  setDay
+  setDay,
+  trackPurchase
 } from "~lib/api"
-import { isoDate, prepareClaim } from "~lib/claim"
+import { draftMessage, isoDate, prepareClaim } from "~lib/claim"
+import { readActiveTab, type TabText } from "~lib/readTab"
 import type {
   Alert,
   CardCatalogEntry,
   Cited,
   ClockState,
+  MerchantPolicy,
   SelectedCard,
   TimelineWindow,
   TrackedPurchase
@@ -54,6 +59,20 @@ function SidePanel() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [error, setError] = useState<string | null>(null)
   const [showCard, setShowCard] = useState(false)
+  const [reading, setReading] = useState<
+    { status: "loading" } | { status: "error"; message: string } | { status: "done"; page: TabText; policy: MerchantPolicy } | null
+  >(null)
+
+  const readThisPage = async () => {
+    setReading({ status: "loading" })
+    try {
+      const page = await readActiveTab()
+      const policy = await readPolicy(page.url, page.text, page.siteName)
+      setReading({ status: "done", page, policy })
+    } catch (e) {
+      setReading({ status: "error", message: (e as Error).message })
+    }
+  }
 
   const refresh = useCallback(async () => {
     try {
@@ -95,12 +114,39 @@ function SidePanel() {
           <span className="mark" aria-hidden="true" />
           BackPocket
         </div>
-        {card && (
-          <button className="card-chip" onClick={() => setShowCard((s) => !s)} aria-expanded={showCard}>
-            <span className="visa">VISA</span> ···· {card.last4}
+        <div className="top-actions">
+          <button className="read-btn" onClick={readThisPage} disabled={reading?.status === "loading"}>
+            {reading?.status === "loading" ? "Reading…" : "Read this page"}
           </button>
-        )}
+          {card && (
+            <button className="card-chip" onClick={() => setShowCard((s) => !s)} aria-expanded={showCard}>
+              <span className="visa">VISA</span> ···· {card.last4}
+            </button>
+          )}
+        </div>
       </header>
+
+      {reading?.status === "error" && (
+        <p className="banner">
+          {reading.message}{" "}
+          <button className="link" onClick={() => setReading(null)}>
+            Dismiss
+          </button>
+        </p>
+      )}
+      {reading?.status === "done" && clock && (
+        <PolicySheet
+          page={reading.page}
+          policy={reading.policy}
+          clock={clock}
+          cardLast4={card?.last4 ?? ""}
+          onClose={() => setReading(null)}
+          onTracked={() => {
+            setReading(null)
+            refresh()
+          }}
+        />
+      )}
 
       {error && <p className="banner error">{error}</p>}
 
@@ -118,7 +164,10 @@ function SidePanel() {
       {!needsCard && purchases.length === 0 && !error && (
         <div className="empty">
           <strong>No purchases yet</strong>
-          <p>After you buy something, turn on “Protect this purchase” on the order confirmation page.</p>
+          <p>
+            After you buy something, turn on “Protect this purchase” on the order confirmation page. Shopping
+            somewhere else? Open that store's return or price-adjustment policy and choose “Read this page”.
+          </p>
         </div>
       )}
 
@@ -258,6 +307,201 @@ function CardSheet({
   )
 }
 
+// ---------- Any store: read a policy page, track a purchase ----------
+
+function dayFromIso(baseDate: string, iso: string): number {
+  const ms = Date.parse(`${iso}T12:00:00Z`) - Date.parse(`${baseDate}T12:00:00Z`)
+  return Math.round(ms / 86400000)
+}
+
+function PolicySheet({
+  page,
+  policy,
+  clock,
+  cardLast4,
+  onClose,
+  onTracked
+}: {
+  page: TabText
+  policy: MerchantPolicy
+  clock: ClockState
+  cardLast4: string
+  onClose: () => void
+  onTracked: () => void
+}) {
+  const [adding, setAdding] = useState(false)
+  const pm = policy.price_match
+  const months = policy.manufacturer_warranty_months.value
+
+  const terms: { label: string; value: string; cite: Cited<unknown> }[] = [
+    {
+      label: "Price adjustment",
+      value:
+        pm.allowed.value === false
+          ? "Not offered"
+          : pm.window_days.value != null
+            ? `Within ${pm.window_days.value} days`
+            : pm.allowed.value
+              ? "Offered (no deadline stated)"
+              : "Not mentioned",
+      cite: pm.window_days.quote ? pm.window_days : pm.allowed
+    },
+    {
+      label: "Returns",
+      value: policy.return_window_days.value != null ? `Within ${policy.return_window_days.value} days` : "Not on this page",
+      cite: policy.return_window_days
+    },
+    {
+      label: "Warranty",
+      value: months != null ? (months % 12 === 0 ? `${months / 12} year${months === 12 ? "" : "s"}` : `${months} months`) : "Not on this page",
+      cite: policy.manufacturer_warranty_months
+    },
+    {
+      label: "How to ask",
+      value: policy.how_to_request.value ?? "Not stated",
+      cite: policy.how_to_request
+    }
+  ]
+
+  return (
+    <section className="sheet policy-sheet">
+      <div className="sheet-head">
+        <div>
+          <p className="eyebrow">What this page says</p>
+          <h2>{policy.merchant}</h2>
+        </div>
+        <button className="link small" onClick={onClose}>
+          Close
+        </button>
+      </div>
+      <dl className="terms">
+        {terms.map((t) => (
+          <div key={t.label} className="term-row">
+            <dt>{t.label}</dt>
+            <dd>
+              {t.value}
+              <LowConfidence c={t.cite} />
+              {t.cite.quote && <SmallQuote c={t.cite} />}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {pm.conditions.length > 0 && (
+        <details>
+          <summary>
+            {pm.conditions.length} condition{pm.conditions.length === 1 ? "" : "s"} on price adjustments
+          </summary>
+          <ul className="conditions">
+            {pm.conditions.map((c, i) => (
+              <li key={i}>{String(c.value)}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {adding ? (
+        <AddPurchaseForm page={page} policy={policy} clock={clock} cardLast4={cardLast4} onDone={onTracked} />
+      ) : (
+        <button className="primary" onClick={() => setAdding(true)}>
+          Track a purchase from {policy.merchant}
+        </button>
+      )}
+    </section>
+  )
+}
+
+function SmallQuote({ c }: { c: Cited<unknown> }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <span className="small-quote">
+      <button className="link small" onClick={() => setOpen((o) => !o)}>
+        {open ? "Hide wording" : "See wording"}
+      </button>
+      {open && <q>{c.quote}</q>}
+    </span>
+  )
+}
+
+function AddPurchaseForm({
+  page,
+  policy,
+  clock,
+  cardLast4,
+  onDone
+}: {
+  page: TabText
+  policy: MerchantPolicy
+  clock: ClockState
+  cardLast4: string
+  onDone: () => void
+}) {
+  const today = isoDate(clock.base_date, clock.day)
+  const [item, setItem] = useState("")
+  const [price, setPrice] = useState("")
+  const [date, setDate] = useState(today)
+  const [orderId, setOrderId] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    const paid = Number(price)
+    if (!item.trim() || !(paid > 0)) {
+      setErr("Add the item and what you paid.")
+      return
+    }
+    setBusy(true)
+    setErr(null)
+    try {
+      await trackPurchase(
+        {
+          order_id: orderId.trim() || `M-${Date.now()}`,
+          merchant: policy.merchant,
+          sku: "",
+          item_name: item.trim(),
+          price_paid: paid,
+          card_last4: cardLast4,
+          purchase_day: dayFromIso(clock.base_date, date),
+          policy_url: page.url,
+          claim_form_url: ""
+        },
+        page.text,
+        true
+      )
+      onDone()
+    } catch (e) {
+      setErr((e as Error).message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="add-form" onSubmit={submit}>
+      <label>
+        Item
+        <input value={item} onChange={(e) => setItem(e.target.value)} placeholder="e.g. Rain jacket" />
+      </label>
+      <div className="add-row">
+        <label>
+          Price paid
+          <input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0.00" />
+        </label>
+        <label>
+          Bought on
+          <input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} />
+        </label>
+      </div>
+      <label>
+        Order number <span className="muted">(optional)</span>
+        <input value={orderId} onChange={(e) => setOrderId(e.target.value)} />
+      </label>
+      {err && <p className="error small">{err}</p>}
+      <button className="primary" disabled={busy}>
+        {busy ? "Saving…" : "Track this purchase"}
+      </button>
+    </form>
+  )
+}
+
 // ---------- Purchase ----------
 
 function PurchaseView({ tp, clock, alerts }: { tp: TrackedPurchase; clock: ClockState; alerts: Alert[] }) {
@@ -289,6 +533,7 @@ function PurchaseView({ tp, clock, alerts }: { tp: TrackedPurchase; clock: Clock
       <section className="block">
         <h2>Price since you bought it</h2>
         <PriceChart tp={tp} today={clock.day} baseDate={clock.base_date} />
+        {!p.sku && <ReportLowerPrice tp={tp} />}
       </section>
 
       <section className="block">
@@ -296,6 +541,47 @@ function PurchaseView({ tp, clock, alerts }: { tp: TrackedPurchase; clock: Clock
         <Deadlines tp={tp} clock={clock} />
       </section>
     </article>
+  )
+}
+
+function ReportLowerPrice({ tp }: { tp: TrackedPurchase }) {
+  const [open, setOpen] = useState(false)
+  const [price, setPrice] = useState("")
+  const [err, setErr] = useState<string | null>(null)
+
+  if (!open) {
+    return (
+      <button className="link small lower-price" onClick={() => setOpen(true)}>
+        Saw a lower price at {tp.purchase.merchant}?
+      </button>
+    )
+  }
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    const v = Number(price)
+    if (!(v > 0)) return setErr("Enter the price you saw.")
+    try {
+      await reportPrice(tp.purchase.order_id, v)
+      setOpen(false)
+      setPrice("")
+      setErr(null)
+    } catch (e) {
+      setErr((e as Error).message)
+    }
+  }
+  return (
+    <form className="lower-price-form" onSubmit={submit}>
+      <input
+        inputMode="decimal"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        placeholder="Price you saw today"
+        aria-label="Lower price you saw today"
+        autoFocus
+      />
+      <button className="small-btn">Check</button>
+      {err && <span className="error small">{err}</span>}
+    </form>
   )
 }
 
@@ -316,11 +602,17 @@ function AlertCard({
   const [state, setState] = useState<{ text: string; ok: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
   const m = alert.money
   const primaryCite = alert.citations[0]
   const pm = tp.timeline.find((w) => w.label === "Price match")
 
   const prepare = async () => {
+    if (!tp.purchase.claim_form_url) {
+      setMessage(draftMessage(tp, alert, clock))
+      return
+    }
     setBusy(true)
     setState({ text: "Opening the store's form…", ok: true })
     try {
@@ -390,10 +682,28 @@ function AlertCard({
               Show the card term behind the points
             </button>
           )}
-          {alert.action === "prepare_claim" && (
+          {alert.action === "prepare_claim" && !message && (
             <button className="primary" onClick={prepare} disabled={busy}>
-              {busy ? "Preparing…" : "Prepare claim form"}
+              {busy ? "Preparing…" : tp.purchase.claim_form_url ? "Prepare claim form" : "Draft a request message"}
             </button>
+          )}
+          {message && (
+            <div className="message">
+              <p className="small">
+                <strong>How to send it:</strong> {tp.policy.how_to_request.value ?? "contact customer service"}.
+                Review the message, then send it yourself.
+              </p>
+              <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={9} />
+              <button
+                className="primary"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(message)
+                  setCopied(true)
+                }}>
+                {copied ? "Copied" : "Copy message"}
+              </button>
+              {tp.policy.how_to_request.quote && <Quote c={tp.policy.how_to_request} policyUrl={tp.policy.source_url} />}
+            </div>
           )}
           {state && <p className={`small ${state.ok ? "muted" : "error"}`}>{state.text}</p>}
         </div>
@@ -476,7 +786,7 @@ function deadlineRow(w: TimelineWindow, clock: ClockState) {
   }
 }
 
-// Hook for e2e/demo_walk.py, which drives "Prepare claim" without clicking the panel.
-;(window as any).__backpocket = { prepareClaim }
+// Hooks for e2e/demo_walk.py and e2e/real_policy.py, which drive the panel's actions directly.
+;(window as any).__backpocket = { prepareClaim, readActiveTab, readPolicy, trackPurchase, draftMessage }
 
 export default SidePanel

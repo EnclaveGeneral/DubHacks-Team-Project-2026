@@ -68,16 +68,16 @@ export default function HomePage() {
 
       <section className="wrap section promise">
         <div>
-          <strong>30-day returns</strong>
-          <span>Unworn with tags? Send it back.</span>
+          <strong>Free shipping &amp; returns</strong>
+          <span>Free shipping over $75. Free returns within 30 days.</span>
         </div>
         <div>
-          <strong>14-day price adjustments</strong>
-          <span>If our price drops, we refund the difference.</span>
+          <strong>Built to be repaired</strong>
+          <span>Every jacket carries a 1-year warranty. We fix tears and zippers.</span>
         </div>
         <div>
-          <strong>1-year warranty</strong>
-          <span>On all outerwear, against defects.</span>
+          <strong>Made with recycled materials</strong>
+          <span>Most of our shells and fleece use recycled nylon and polyester.</span>
         </div>
       </section>
     </>
