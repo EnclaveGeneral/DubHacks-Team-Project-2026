@@ -16,8 +16,10 @@ function justification(tp: TrackedPurchase, alert: Alert, date: string): string 
     : ""
   if (isReturn(alert)) {
     return (
+      // No claim about the item's condition: return conditions differ by store
+      // (tags on, unused, original packaging), and the quoted clause states them.
       `I'd like to return the ${p.item_name} (order ${p.order_id}), bought for $${p.price_paid.toFixed(2)} ` +
-      `on ${longDate(date)}. It's unworn with the original tags attached and within the return window.${clause}`
+      `on ${longDate(date)}, within the return window.${clause}`
     )
   }
   const current = p.price_paid - (alert.money?.refund ?? 0)
@@ -72,8 +74,7 @@ export function draftMessage(tp: TrackedPurchase, alert: Alert, clock: ClockStat
     return [
       "Hi,",
       "",
-      `I'd like to return the ${p.item_name} I bought on ${date} for $${p.price_paid.toFixed(2)}${order}. ` +
-        "It's unworn with the original tags attached.",
+      `I'd like to return the ${p.item_name} I bought on ${date} for $${p.price_paid.toFixed(2)}${order}.`,
       policyRef,
       "",
       "Could you tell me how to send it back for a refund to my original form of payment?",

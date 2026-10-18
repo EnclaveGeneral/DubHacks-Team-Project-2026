@@ -45,9 +45,21 @@ import "./sidepanel.css"
 
 const bare = (host: string) => host.replace(/^www\./, "")
 
+/**
+ * Which site a URL belongs to, for "this store's purchases". Local dev servers
+ * keep their port (localhost:5173 is the store, localhost:5174 is the BackPocket
+ * site); real sites compare by registrable domain, so help.store.com and
+ * www.store.com are the same store.
+ */
 function hostOf(url: string): string | null {
   try {
-    return bare(new URL(url).hostname)
+    const u = new URL(url)
+    const host = bare(u.hostname)
+    if (host === "localhost" || /^[\d.]+$/.test(host) || host.includes(":")) return u.host
+    const labels = host.split(".")
+    // example.com -> example.com; shop.example.co.uk -> example.co.uk
+    const keep = labels.length > 2 && labels[labels.length - 1].length === 2 && labels[labels.length - 2].length <= 3 ? 3 : 2
+    return labels.slice(-keep).join(".")
   } catch {
     return null
   }

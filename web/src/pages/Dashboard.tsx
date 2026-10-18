@@ -5,6 +5,8 @@ import { alertIcon, alertTone, explainAlert } from '../../../shared/ui/explain'
 import type { Alert, ClockState, TrackedPurchase } from '../../../shared/ui/types'
 import { useBackPocket } from '../state.tsx'
 
+const SAVINGS_KINDS = new Set<Alert['kind']>(['price_drop_claimable', 'return_rebuy'])
+
 interface Row {
   tp: TrackedPurchase
   alerts: Alert[]
@@ -31,8 +33,13 @@ export default function Dashboard() {
   const merchants = [...new Set(state.purchases.map((tp) => tp.purchase.merchant))]
   const shown = rows.filter((r) => store === 'all' || r.tp.purchase.merchant === store)
   const needAttention = rows.filter((r) => r.alerts.length > 0)
-  // Estimates from the top alert on each purchase.
-  const recoverable = needAttention.reduce((sum, r) => sum + Math.max(0, r.alerts[0].money?.net_estimate ?? 0), 0)
+  // Money the shopper can actually come out ahead by: a price adjustment or a
+  // return & rebuy. A plain "return window closing" alert's amount is the full
+  // refund of their own money, not a saving, so it doesn't count.
+  const recoverable = needAttention.reduce((sum, r) => {
+    const saving = r.alerts.find((a) => SAVINGS_KINDS.has(a.kind))
+    return sum + Math.max(0, saving?.money?.net_estimate ?? 0)
+  }, 0)
 
   if (state.purchases.length === 0) {
     return (
