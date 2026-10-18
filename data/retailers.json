@@ -1,0 +1,403 @@
+[
+  {
+    "id": "walmart",
+    "name": "Walmart",
+    "rank_note": "NRF 2026 #1",
+    "domains": [
+      "walmart.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.walmart.com/help/article/walmart-standard-return-policy/adc0dfb692954e67a4de206fb8d9e03a",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.walmart.com/help/article/walmart-price-match-policy/6295d9e1a501489b9aa40a60c899b288",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "Price Match Policy excludes price drops after a Walmart.com purchase; same text at corporate.walmart.com/policies (fetch ok)."
+  },
+  {
+    "id": "amazon",
+    "name": "Amazon",
+    "rank_note": "NRF 2026 #2",
+    "domains": [
+      "amazon.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GKM69DUUYKQWKWX7",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=G9EAYKPV5YYDB8P7",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "No price matching or post-purchase price adjustment; only a Pre-order Price Guarantee (nodeId=G4BRP7LCB9DSDNCR) for unreleased items."
+  },
+  {
+    "id": "costco",
+    "name": "Costco",
+    "rank_note": "NRF 2026 #3",
+    "domains": [
+      "costco.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://customerservice.costco.com/app/answers/detail/a_id/1191/~/what-is-costcos-return-policy",
+        "fetch": "ok"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://customerservice.costco.com/app/answers/detail/a_id/628/~/price-adjustment---costco.com-orders",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "Costco.com price adjustment if price drops within 30 days of purchase; no competitor matching."
+  },
+  {
+    "id": "homedepot",
+    "name": "The Home Depot",
+    "rank_note": "NRF 2026 #5",
+    "domains": [
+      "homedepot.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.homedepot.com/c/Return_Policy",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.homedepot.com/c/price-match-and-price-check",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "Price Match Guarantee covers competitors; search snippets indicate own price drops can be adjusted within 30 days of purchase (page not readable via fetch)."
+  },
+  {
+    "id": "target",
+    "name": "Target",
+    "rank_note": "NRF 2026 #8",
+    "domains": [
+      "target.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.target.com/help/articles/returns-exchanges/returns",
+        "fetch": "ok"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.target.com/help/articles/policies-guidelines/price-match-guarantee",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "Price Match Guarantee covers Target's own lower price (store or Target.com) within 14 days after purchase."
+  },
+  {
+    "id": "lowes",
+    "name": "Lowe's",
+    "rank_note": "NRF 2026 #9",
+    "domains": [
+      "lowes.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.lowes.com/l/help/returns-policy",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.lowes.com/l/about/lowest-price-guarantee",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "Lowest Price Guarantee matches competitor prices at time of purchase; unclear whether it covers Lowe's own post-purchase price drops."
+  },
+  {
+    "id": "apple",
+    "name": "Apple",
+    "rank_note": "NRF 2026 #11",
+    "domains": [
+      "apple.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.apple.com/shop/help/returns_refund",
+        "fetch": "ok"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "14-day returns; refund of difference if Apple lowers price within 14 days of receipt (excludes limited-time sales)."
+  },
+  {
+    "id": "tjmaxx",
+    "name": "T.J. Maxx (TJX Companies)",
+    "rank_note": "NRF 2026 #15 (TJX Companies)",
+    "domains": [
+      "tjmaxx.tjx.com",
+      "tjmaxx.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://tjmaxx.tjx.com/store/jump/topic/return-policy-for-items-purchased-in-stores/18400007p",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://tjmaxx.tjx.com/store/jump/topic/FAQs/23900001p",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "No price adjustments on previously purchased markdowns (stated in FAQ); online-order returns page is .../return-policy-for-items-purchased-online/2400118."
+  },
+  {
+    "id": "bestbuy",
+    "name": "Best Buy",
+    "rank_note": "NRF 2026 #18",
+    "domains": [
+      "bestbuy.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.bestbuy.com/site/help-topics/return-exchange-policy/pcmcat260800050014.c?id=pcmcat260800050014",
+        "fetch": "ok"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.bestbuy.com/site/help-topics/price-match-guarantee/pcmcat290300050002.c?id=pcmcat290300050002",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "Price Match Guarantee also matches Best Buy's own lower price during the return and exchange period."
+  },
+  {
+    "id": "ross",
+    "name": "Ross Stores",
+    "rank_note": "NRF 2026 #22",
+    "domains": [
+      "rossstores.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.rossstores.com/contact-us/",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "No price adjustment or price match policy found; return policy lives on the Contact Us page."
+  },
+  {
+    "id": "macys",
+    "name": "Macy's",
+    "rank_note": "NRF 2026 #25",
+    "domains": [
+      "macys.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.macys.com/customer-service/articles/what-is-macys-return-policy",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.macys.com/customer-service/articles/how-can-i-get-a-price-adjustment",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "Price adjustment if a Macy's advertised price drops within 10 days of order."
+  },
+  {
+    "id": "dicks",
+    "name": "DICK'S Sporting Goods",
+    "rank_note": "NRF 2026 #27",
+    "domains": [
+      "dickssportinggoods.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.dickssportinggoods.com/s/return-policy",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.dickssportinggoods.com/s/policy/price-match-policy",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "Price Match Policy covers qualifying competitors; whether it covers DICK'S own post-purchase drops not confirmed."
+  },
+  {
+    "id": "nordstrom",
+    "name": "Nordstrom",
+    "rank_note": "NRF 2026 #33",
+    "domains": [
+      "nordstrom.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.nordstrom.com/browse/services/return-policy",
+        "fetch": "ok"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "Price adjustment on full-price items within 10 days of purchase/shipment; no competitor price matching."
+  },
+  {
+    "id": "kohls",
+    "name": "Kohl's",
+    "rank_note": "NRF 2026 #34",
+    "domains": [
+      "kohls.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.kohls.com/faq/article/893",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.kohls.com/faq/article/88",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "Price adjustment if price drops within 14 days of purchase (clearance/BOGO excluded)."
+  },
+  {
+    "id": "gap",
+    "name": "Gap",
+    "rank_note": "NRF 2026 #37 (Gap Inc.)",
+    "domains": [
+      "gap.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.gap.com/customer-service/return-policy-faq?cid=1192370",
+        "fetch": "ok"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "One-time price adjustment within 14 days of order; promo-code and final-sale purchases excluded."
+  },
+  {
+    "id": "ulta",
+    "name": "Ulta Beauty",
+    "rank_note": "NRF 2026 #41",
+    "domains": [
+      "ulta.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.ulta.com/guestservices/all",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "No price adjustment or price match policy found; returns are a section of the Guest Services page."
+  },
+  {
+    "id": "burlington",
+    "name": "Burlington",
+    "rank_note": "NRF 2026 #45",
+    "domains": [
+      "burlington.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.burlington.com/helpcenter/return-policy",
+        "fetch": "ok"
+      }
+    ],
+    "notes": "No price adjustment or price match policy found (Pricing Policy page only explains comparable-value labels)."
+  },
+  {
+    "id": "wayfair",
+    "name": "Wayfair",
+    "rank_note": "NRF 2026 #46",
+    "domains": [
+      "wayfair.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.wayfair.com/help/answer/20/what-is-your-return-policy",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "No published price adjustment or price match policy found."
+  },
+  {
+    "id": "williamssonoma",
+    "name": "Williams Sonoma",
+    "rank_note": "NRF 2026 #59 (Williams-Sonoma Inc.)",
+    "domains": [
+      "williams-sonoma.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://www.williams-sonoma.com/customer-service/return/",
+        "fetch": "js_shell"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://www.williams-sonoma.com/pages/williams-sonoma/price-match-guarantee/",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "Price Match Guarantee mainly targets competitor prices; a search snippet suggests prior purchases are not eligible for price adjustments (unverified)."
+  },
+  {
+    "id": "bathandbodyworks",
+    "name": "Bath & Body Works",
+    "rank_note": "NRF 2026 #65",
+    "domains": [
+      "bathandbodyworks.com"
+    ],
+    "pages": [
+      {
+        "topic": "returns",
+        "url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410663128339-Website-Purchase-Return-Policy",
+        "fetch": "blocked"
+      },
+      {
+        "topic": "price_adjustment",
+        "url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments",
+        "fetch": "blocked"
+      }
+    ],
+    "notes": "One-time price adjustment within 14 days (store with receipt, online via chat); flash sales and short promos excluded."
+  }
+]

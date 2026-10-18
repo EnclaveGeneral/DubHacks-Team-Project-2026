@@ -1,0 +1,24 @@
+{
+  "id": "walmart",
+  "name": "Walmart",
+  "domains": [
+    "walmart.com"
+  ],
+  "notes": "Price Match Policy excludes price drops after a Walmart.com purchase; same text at corporate.walmart.com/policies (fetch ok).",
+  "ingested_at": "2026-10-18T09:46:49Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.walmart.com/help/article/walmart-standard-return-policy/adc0dfb692954e67a4de206fb8d9e03a",
+      "status": "blocked",
+      "chars": 211
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.walmart.com/help/article/walmart-price-match-policy/6295d9e1a501489b9aa40a60c899b288",
+      "status": "blocked",
+      "chars": 211
+    }
+  ],
+  "policy": null
+}

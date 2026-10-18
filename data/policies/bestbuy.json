@@ -1,0 +1,103 @@
+{
+  "id": "bestbuy",
+  "name": "Best Buy",
+  "domains": [
+    "bestbuy.com"
+  ],
+  "notes": "Price Match Guarantee also matches Best Buy's own lower price during the return and exchange period.",
+  "ingested_at": "2026-10-18T09:40:43Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.bestbuy.com/site/help-topics/return-exchange-policy/pcmcat260800050014.c?id=pcmcat260800050014",
+      "status": "ok",
+      "chars": 9219
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.bestbuy.com/site/help-topics/price-match-guarantee/pcmcat290300050002.c?id=pcmcat290300050002",
+      "status": "ok",
+      "chars": 3985
+    }
+  ],
+  "policy": {
+    "merchant": "Best Buy",
+    "source_url": "https://www.bestbuy.com/site/help-topics/return-exchange-policy/pcmcat260800050014.c?id=pcmcat260800050014",
+    "return_window_days": {
+      "value": 15,
+      "quote": "days",
+      "clause": null,
+      "confidence": "low",
+      "source_url": "https://www.bestbuy.com/site/help-topics/return-exchange-policy/pcmcat260800050014.c?id=pcmcat260800050014"
+    },
+    "exchange_window_days": {
+      "value": 15,
+      "quote": "days",
+      "clause": null,
+      "confidence": "low",
+      "source_url": "https://www.bestbuy.com/site/help-topics/return-exchange-policy/pcmcat260800050014.c?id=pcmcat260800050014"
+    },
+    "price_match": {
+      "allowed": {
+        "value": true,
+        "quote": "If we lower our in-store, online or app price during the return and exchange period, we will match our lower price, upon request.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.bestbuy.com/site/help-topics/price-match-guarantee/pcmcat290300050002.c?id=pcmcat290300050002"
+      },
+      "window_days": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "conditions": [
+        {
+          "value": "Price must be lowered during the return and exchange period",
+          "quote": "If we lower our in-store, online or app price during the return and exchange period, we will match our lower price, upon request.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.bestbuy.com/site/help-topics/price-match-guarantee/pcmcat290300050002.c?id=pcmcat290300050002"
+        },
+        {
+          "value": "Shopper must request the adjustment",
+          "quote": "If we lower our in-store, online or app price during the return and exchange period, we will match our lower price, upon request.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.bestbuy.com/site/help-topics/price-match-guarantee/pcmcat290300050002.c?id=pcmcat290300050002"
+        },
+        {
+          "value": "Item must be new and sold from Best Buy (excludes Marketplace Products, clearance, refurbished and open-box items)",
+          "quote": "Our Price Match Guarantee covers new items sold from Best Buy (excludes Marketplace Products, clearance, refurbished and open-box items).",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.bestbuy.com/site/help-topics/price-match-guarantee/pcmcat290300050002.c?id=pcmcat290300050002"
+        }
+      ]
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "call 1-888-BEST BUY (1-888-237-8289)",
+      "quote": "You can also call 1-888-BEST BUY (1-888-237-8289) for a BestBuy.com price match request.",
+      "clause": "2",
+      "confidence": "high",
+      "source_url": "https://www.bestbuy.com/site/help-topics/price-match-guarantee/pcmcat290300050002.c?id=pcmcat290300050002"
+    },
+    "retailer_id": "bestbuy"
+  }
+}

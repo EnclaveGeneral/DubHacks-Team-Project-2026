@@ -332,6 +332,8 @@ function PolicySheet({
 }) {
   const [adding, setAdding] = useState(false)
   const pm = policy.price_match
+  // A stored retailer policy covers several pages, so "not on this page" would mislead.
+  const missing = policy.retailer_id ? "Not stated" : "Not on this page"
   const months = policy.manufacturer_warranty_months.value
 
   const terms: { label: string; value: string; cite: Cited<unknown> }[] = [
@@ -349,12 +351,20 @@ function PolicySheet({
     },
     {
       label: "Returns",
-      value: policy.return_window_days.value != null ? `Within ${policy.return_window_days.value} days` : "Not on this page",
-      cite: policy.return_window_days
+      value:
+        policy.return_window_days.value != null
+          ? `Within ${policy.return_window_days.value} days`
+          : policy.returns_unlimited?.value
+            ? "No time limit"
+            : missing,
+      cite:
+        policy.return_window_days.value == null && policy.returns_unlimited?.value
+          ? policy.returns_unlimited
+          : policy.return_window_days
     },
     {
       label: "Warranty",
-      value: months != null ? (months % 12 === 0 ? `${months / 12} year${months === 12 ? "" : "s"}` : `${months} months`) : "Not on this page",
+      value: months != null ? (months % 12 === 0 ? `${months / 12} year${months === 12 ? "" : "s"}` : `${months} months`) : missing,
       cite: policy.manufacturer_warranty_months
     },
     {
@@ -368,7 +378,9 @@ function PolicySheet({
     <section className="sheet policy-sheet">
       <div className="sheet-head">
         <div>
-          <p className="eyebrow">What this page says</p>
+          <p className="eyebrow">
+            {policy.retailer_id ? `From ${policy.merchant}'s policy pages` : "What this page says"}
+          </p>
           <h2>{policy.merchant}</h2>
         </div>
         <button className="link small" onClick={onClose}>
@@ -410,6 +422,17 @@ function PolicySheet({
   )
 }
 
+// "https://www.nordstrom.com/browse/customer-service/price-adjustments" -> "price adjustments page"
+function pageName(url: string): string {
+  try {
+    const last = new URL(url).pathname.split("/").filter(Boolean).pop() ?? ""
+    const words = decodeURIComponent(last).replace(/\.[a-z]+$/i, "").replace(/[-_]+/g, " ").trim()
+    return words && !/^\d+$/.test(words) ? `${words.toLowerCase()} page` : "source page"
+  } catch {
+    return "source page"
+  }
+}
+
 function SmallQuote({ c }: { c: Cited<unknown> }) {
   const [open, setOpen] = useState(false)
   return (
@@ -418,6 +441,11 @@ function SmallQuote({ c }: { c: Cited<unknown> }) {
         {open ? "Hide wording" : "See wording"}
       </button>
       {open && <q>{c.quote}</q>}
+      {open && c.source_url && (
+        <a className="small source-link" href={c.source_url} target="_blank" rel="noreferrer">
+          {pageName(c.source_url)}
+        </a>
+      )}
     </span>
   )
 }
@@ -462,11 +490,12 @@ function AddPurchaseForm({
           price_paid: paid,
           card_last4: cardLast4,
           purchase_day: dayFromIso(clock.base_date, date),
-          policy_url: page.url,
+          policy_url: policy.retailer_id ? policy.source_url : page.url,
           claim_form_url: ""
         },
-        page.text,
-        true
+        policy.retailer_id ? "" : page.text,
+        true,
+        policy.retailer_id ?? null
       )
       onDone()
     } catch (e) {
@@ -514,7 +543,7 @@ function PurchaseView({ tp, clock, alerts }: { tp: TrackedPurchase; clock: Clock
         <div>
           <h1>{p.item_name}</h1>
           <p className="muted small">
-            {p.merchant} · paid {usd(p.price_paid)} on {fmtDate(isoDate(clock.base_date, p.purchase_day))}
+            {p.merchant} · Paid {usd(p.price_paid)} on {fmtDate(isoDate(clock.base_date, p.purchase_day))}
           </p>
         </div>
       </header>
@@ -532,7 +561,7 @@ function PurchaseView({ tp, clock, alerts }: { tp: TrackedPurchase; clock: Clock
       ))}
 
       <section className="block">
-        <h2>Price since you bought it</h2>
+        <h2>Price Tracker</h2>
         <PriceChart tp={tp} today={clock.day} baseDate={clock.base_date} />
         {!p.sku && <ReportLowerPrice tp={tp} />}
       </section>
@@ -589,8 +618,8 @@ function ReportLowerPrice({ tp }: { tp: TrackedPurchase }) {
 // ---------- Alerts ----------
 
 function pointsPhrase(lost: number): string {
-  if (lost > 0) return `after ${lost} points are taken back`
-  if (lost < 0) return `and earn about ${-lost} more points`
+  if (lost > 0) return ` after losing ${lost} points`
+  if (lost < 0) return `, and you'd earn about ${-lost} more points`
   return ""
 }
 
@@ -613,7 +642,8 @@ function AlertCard({
   compact?: boolean
 }) {
   const [open, setOpen] = useState(!compact)
-  const [state, setState] = useState<{ text: string; ok: boolean } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [filled, setFilled] = useState(false)
   const [busy, setBusy] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -627,19 +657,12 @@ function AlertCard({
       return
     }
     setBusy(true)
-    setState({ text: "Opening the store's form…", ok: true })
+    setError(null)
     try {
-      const r = await prepareClaim(tp, alert, clock)
-      const left = r.failed.length + r.unfilled.length
-      setState({
-        text:
-          `Filled ${plural(r.filled.length, "field")} on the store's form` +
-          (left ? `, ${left} left for you` : "") +
-          ". Check the highlighted fields, then submit it yourself.",
-        ok: true
-      })
+      await prepareClaim(tp, alert, clock)
+      setFilled(true)
     } catch (e) {
-      setState({ text: `Couldn't prepare the form: ${(e as Error).message}`, ok: false })
+      setError(`Couldn't prepare the form: ${(e as Error).message}`)
     } finally {
       setBusy(false)
     }
@@ -649,29 +672,32 @@ function AlertCard({
   const returnLeft = ret ? Math.max(0, ret.closes_day - clock.day) : null
   const pending = alert.body.includes("pending")
 
+  // What the shopper ends up with, after card points are taken back.
+  const outcome = (mm: NonNullable<typeof m>, verb: "get" | "save") =>
+    `You'd ${verb} about ${usd(mm.net_estimate)}${verb === "get" ? " back" : ""}${pointsPhrase(mm.points_reversed)}.`
+
   let detail: string | null = null
   let steps: string[] = []
-  let result: string | null = null
   if (alert.kind === "price_drop_claimable") {
     const left = pm ? Math.max(0, pm.closes_day - clock.day) : null
-    detail =
-      (left !== null ? `${plural(left, "day")} left to claim. ` : "") +
-      (m ? `About ${usd(m.net_estimate)} back ${pointsPhrase(m.points_reversed)} (estimate).` : "")
+    detail = [left !== null && `${plural(left, "day")} left to claim.`, m && outcome(m, "get")].filter(Boolean).join(" ")
   } else if (alert.kind === "return_rebuy" && m) {
-    // First sentence of the engine's explanation: why no price adjustment.
-    detail = alert.body.split(/(?<=\.)\s/)[0]
+    const why = tp.claims_filed.includes("price_match")
+      ? "You've used your one price adjustment"
+      : pm
+        ? `Price adjustments end after ${pm.closes_day - pm.opens_day} days`
+        : "This store doesn't adjust prices"
+    detail = `${why}, but you can still return it. ${outcome(m, "save")}${pending ? " Assumes your pending adjustment is approved." : ""}`
     const current = currentPrice(tp, clock.day)
-    steps = [
-      `Buy it again at ${usd(current)}.`,
-      `Return the original for a ${usd(current + m.refund)} refund` +
-        (returnLeft !== null ? (returnLeft === 0 ? " by today." : ` within ${plural(returnLeft, "day")}.`) : ".")
-    ]
-    result = `You come out about ${usd(m.net_estimate)} ahead ${pointsPhrase(m.points_reversed)} (estimate).`
+    const by =
+      ret?.open_ended || returnLeft === null ? "" : returnLeft === 0 ? " today" : ` within ${plural(returnLeft, "day")}`
+    steps = [`Buy it again at ${usd(current)}.`, `Return the original${by} for ${usd(current + m.refund)}.`]
   } else if (alert.kind === "window_closing" && m) {
     detail =
-      `Returning refunds ${usd(m.refund)}` +
-      (m.points_reversed ? ` and takes back about ${m.points_reversed} points (estimate)` : "") +
-      "."
+      `Refunds ${usd(m.refund)}` +
+      (m.points_reversed ? `, takes back about ${m.points_reversed} points` : "") +
+      "." +
+      (pending ? " Assumes your pending adjustment is approved." : "")
   }
 
   const action =
@@ -711,17 +737,6 @@ function AlertCard({
               ))}
             </ol>
           )}
-          {result && <p className="result">{result}</p>}
-          {(alert.kind === "return_rebuy" || (pending && alert.kind === "window_closing")) && (
-            <p className="small muted">
-              {[
-                pending && "Assumes your pending price adjustment is approved.",
-                alert.kind === "return_rebuy" && "Check that the new order isn't marked Final Sale."
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            </p>
-          )}
           {(showAll ? alert.citations : alert.citations.slice(0, 1)).map((c, i) => (
             <Quote key={i} c={c} policyUrl={tp.policy.source_url} />
           ))}
@@ -731,8 +746,8 @@ function AlertCard({
             </button>
           )}
           {action && !message && (
-            <button className="primary" onClick={prepare} disabled={busy}>
-              {busy ? "Preparing…" : action}
+            <button className={`primary ${filled ? "done" : ""}`} onClick={prepare} disabled={busy}>
+              {busy ? "Preparing…" : filled ? "Form filled ✓ Review it, then submit" : action}
             </button>
           )}
           {message && (
@@ -753,7 +768,7 @@ function AlertCard({
               {tp.policy.how_to_request.quote && <Quote c={tp.policy.how_to_request} policyUrl={tp.policy.source_url} />}
             </div>
           )}
-          {state && <p className={`small ${state.ok ? "muted" : "error"}`}>{state.text}</p>}
+          {error && <p className="small error">{error}</p>}
         </div>
       )}
     </div>
@@ -765,7 +780,13 @@ function Quote({ c, policyUrl }: { c: Cited<unknown>; policyUrl?: string }) {
   if (!c.quote) return null
   const isCard = c.clause?.startsWith("§")
   const source = isCard ? "Card benefits guide" : "Store policy"
-  const href = !isCard && policyUrl && c.clause ? `${policyUrl}#clause-${c.clause}` : undefined
+  const href = isCard
+    ? undefined
+    : c.source_url
+      ? c.source_url
+      : policyUrl && c.clause
+        ? `${policyUrl}#clause-${c.clause}`
+        : undefined
   return (
     <figure className="quote">
       <figcaption>
@@ -820,6 +841,7 @@ function deadlineRow(w: TimelineWindow, clock: ClockState) {
   let when: string
   if (w.status === "claimed") when = label === "Return" ? "Return requested ✓" : "Claim filed ✓"
   else if (w.status === "closed") when = "Closed"
+  else if (w.open_ended) when = "No time limit"
   else if (w.long_term) when = `Until ${end}`
   else when = left === 0 ? "Closes today" : `${plural(left, "day")} left`
 

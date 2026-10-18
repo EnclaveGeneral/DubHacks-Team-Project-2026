@@ -100,6 +100,13 @@ def timeline(
             label="Return", source="merchant", opens_day=d0, closes_day=d0 + w,
             status=status, citation=policy.return_window_days,
         ))
+    elif policy.returns_unlimited.value:
+        windows.append(TimelineWindow(
+            label="Return", source="merchant", opens_day=d0,
+            closes_day=max(d0 + 30, day + 30),  # for drawing only; it never closes
+            status="claimed" if "return" in claims_filed else "open",
+            open_ended=True, citation=policy.returns_unlimited,
+        ))
 
     mfr_months = policy.manufacturer_warranty_months.value
     if mfr_months is not None:
@@ -133,17 +140,6 @@ def timeline(
 
 
 # ---------- Price watch ----------
-
-
-def drop_events(price_paid: float, price_history: dict[int, float]) -> list[tuple[int, float]]:
-    """Days on which the observed price fell below every earlier price."""
-    events = []
-    lowest = price_paid
-    for d in sorted(price_history):
-        if price_history[d] < lowest - 0.005:
-            lowest = price_history[d]
-            events.append((d, lowest))
-    return events
 
 
 def price_on(day: int, price_paid: float, price_history: dict[int, float]) -> float:
@@ -196,15 +192,15 @@ def _adjustment_alert(purchase, policy, card, day, price_history, claims_filed) 
     rel_now = day - purchase.purchase_day
     if rel_now > window:
         return None
-    events = [(d, p) for d, p in drop_events(purchase.price_paid, price_history)
-              if d <= day and d - purchase.purchase_day <= window]
-    if not events:
+    # Today's price, not the lowest seen: any drop below what was paid is
+    # actionable now, and a price that went back up is not.
+    current = price_on(day, purchase.price_paid, price_history)
+    if current >= purchase.price_paid - 0.005:
         return None
-    event_day, price = events[-1]
-    drop = purchase.price_paid - price
+    drop = purchase.price_paid - current
     m = money(drop, purchase.price_paid, card)
     return Alert(
-        id=f"pm-{purchase.order_id}-d{event_day}", purchase_id=purchase.order_id,
+        id=f"pm-{purchase.order_id}-p{current:g}", purchase_id=purchase.order_id,
         kind="price_drop_claimable", title=f"Price dropped {_money_line(drop)}",
         body=(
             f"{_clause(pm.window_days)} allows a price match within {window} days; "
@@ -212,7 +208,7 @@ def _adjustment_alert(purchase, policy, card, day, price_history, claims_filed) 
             f"{_money_line(round(m.net_estimate))} (estimate)."
         ),
         money=m, citations=[pm.window_days, *_points_citation(card)],
-        action="prepare_claim", created_day=event_day,
+        action="prepare_claim", created_day=day,
     )
 
 
@@ -220,10 +216,11 @@ def _rebuy_alert(purchase, policy, card, day, price_history, claims_filed) -> Al
     """When a price adjustment isn't available but the return window is open
     and the price is lower: return the item and buy it again."""
     rw = policy.return_window_days.value
-    if rw is None or "return" in claims_filed:
+    unlimited = rw is None and bool(policy.returns_unlimited.value)
+    if (rw is None and not unlimited) or "return" in claims_filed:
         return None
-    left = purchase.purchase_day + rw - day
-    if left < 0:
+    left = None if unlimited else purchase.purchase_day + rw - day
+    if left is not None and left < 0:
         return None
     paid_now = effective_paid(purchase, policy, price_history, claims_filed)
     current = price_on(day, purchase.price_paid, price_history)
@@ -258,13 +255,18 @@ def _rebuy_alert(purchase, policy, card, day, price_history, claims_filed) -> Al
         kind="return_rebuy",
         title=f"Save {_money_line(m.refund)} by returning and rebuying",
         body=(
-            f"{why_not} The return window is still open "
-            f"({'it closes today' if left == 0 else _days(left) + ' left'}). Buy it again at "
+            f"{why_not} "
+            + ("Returns have no time limit. " if left is None else
+               f"The return window is still open ({'it closes today' if left == 0 else _days(left) + ' left'}). ")
+            + f"Buy it again at "
             f"{_money_line(current)}, then return the original for a {_money_line(paid_now)} refund."
             f"{pending} Check that the new order isn't marked Final Sale."
         ),
         money=m,
-        citations=[policy.return_window_days, *why_cites, *_points_citation(card)],
+        citations=[
+            policy.returns_unlimited if unlimited else policy.return_window_days,
+            *why_cites, *_points_citation(card),
+        ],
         action="prepare_return", created_day=day,
     )
 

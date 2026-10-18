@@ -72,7 +72,7 @@ function bandsFor(tp: TrackedPurchase, baseDate: string): Band[] {
         from,
         to: ret.closes_day,
         label: "Return & rebuy",
-        state: ret.status === "claimed" ? "return requested" : until(ret)
+        state: ret.status === "claimed" ? "return requested" : ret.open_ended ? "no time limit" : until(ret)
       })
     }
   }
@@ -85,7 +85,7 @@ interface Props {
   baseDate: string
 }
 
-export default function PriceChart({ tp, today, baseDate }: Props) {
+export default function PriceChart({ tp, today: clockDay, baseDate }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(320)
   const [hover, setHover] = useState<number | null>(null)
@@ -100,6 +100,9 @@ export default function PriceChart({ tp, today, baseDate }: Props) {
 
   const p = tp.purchase
   const d0 = p.purchase_day
+  const clipId = `plot-${p.order_id.replace(/[^\w-]/g, "")}`
+  // The demo clock can be set before the purchase date; draw from the purchase.
+  const today = Math.max(clockDay, d0)
   const bands = bandsFor(tp, baseDate)
 
   // Observed prices (store day -> price), starting from what was paid.
@@ -127,10 +130,12 @@ export default function PriceChart({ tp, today, baseDate }: Props) {
   }
 
   const xMax = Math.max(d0 + 30, ...bands.map((b) => b.to), today + 2)
+  // Scale to every price shown (it can rise above what was paid, too).
   const lo = Math.min(...points.map((pt) => pt[1]), p.price_paid)
-  const ticks = niceTicks(lo * 0.82, p.price_paid * 1.04)
+  const hi = Math.max(...points.map((pt) => pt[1]), p.price_paid)
+  const ticks = niceTicks(lo * 0.82, hi * 1.04)
   const yMin = ticks[0]
-  const yMax = Math.max(ticks[ticks.length - 1], p.price_paid * 1.1)
+  const yMax = Math.max(ticks[ticks.length - 1], hi * 1.1)
 
   const right = width - PAD.right
   const bottom = H - PAD.bottom
@@ -200,6 +205,11 @@ export default function PriceChart({ tp, today, baseDate }: Props) {
         </figcaption>
       )}
       <svg width={width} height={H} role="img" aria-label={summary}>
+        <defs>
+          <clipPath id={clipId}>
+            <rect x={PAD.left} y={PAD.top - 5} width={right - PAD.left + 5} height={bottom - PAD.top + 10} />
+          </clipPath>
+        </defs>
         {bands.map((b) => (
           <rect
             key={b.key}
@@ -225,8 +235,10 @@ export default function PriceChart({ tp, today, baseDate }: Props) {
           {paidText}
         </text>
 
-        <path d={line} className="series" />
-        <circle cx={dx} cy={dy} r={4.5} className="end-dot" />
+        <g clipPath={`url(#${clipId})`}>
+          <path d={line} className="series" />
+          <circle cx={dx} cy={dy} r={4.5} className="end-dot" />
+        </g>
         {nowPrice !== p.price_paid && nowSpot && (
           <text x={nowSpot.tx} y={nowSpot.ty} textAnchor={nowSpot.anchor} className="chart-label strong">
             {nowText}

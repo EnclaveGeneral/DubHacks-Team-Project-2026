@@ -1,0 +1,75 @@
+{
+  "id": "ulta",
+  "name": "Ulta Beauty",
+  "domains": [
+    "ulta.com"
+  ],
+  "notes": "No price adjustment or price match policy found; returns are a section of the Guest Services page.",
+  "ingested_at": "2026-10-18T09:41:26Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.ulta.com/guestservices/all",
+      "status": "ok",
+      "chars": 35439
+    }
+  ],
+  "policy": {
+    "merchant": "Ulta Beauty",
+    "source_url": "https://www.ulta.com/guestservices/all",
+    "return_window_days": {
+      "value": 30,
+      "quote": "You can return most new or gently used products within 30 days of the original purchase date for a refund to the original form of payment, subject to refund restrictions below.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.ulta.com/guestservices/all"
+    },
+    "exchange_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "price_match": {
+      "allowed": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "window_days": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "conditions": []
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "return in-store or through the mail",
+      "quote": "You may return your order in-store or through the mail once you receive it.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.ulta.com/guestservices/all"
+    },
+    "retailer_id": "ulta"
+  }
+}

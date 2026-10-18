@@ -1,0 +1,24 @@
+{
+  "id": "homedepot",
+  "name": "The Home Depot",
+  "domains": [
+    "homedepot.com"
+  ],
+  "notes": "Price Match Guarantee covers competitors; search snippets indicate own price drops can be adjusted within 30 days of purchase (page not readable via fetch).",
+  "ingested_at": "2026-10-18T09:45:54Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.homedepot.com/c/Return_Policy",
+      "status": "blocked",
+      "chars": 56
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.homedepot.com/c/price-match-and-price-check",
+      "status": "blocked",
+      "chars": 56
+    }
+  ],
+  "policy": null
+}

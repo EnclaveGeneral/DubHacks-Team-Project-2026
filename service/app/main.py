@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from . import cards, clock, db, extract, tracking
+from . import cards, clock, db, extract, retailers, tracking
 from .schemas import (
     Alert,
     CardCatalogEntry,
@@ -149,7 +149,10 @@ def select_card(card_id: str, fresh: bool = False):
 
 @app.post("/purchases", response_model=TrackedPurchase)
 def add_purchase(body: NewPurchaseRequest, fresh: bool = False):
-    if not body.policy_text.strip():
+    stored = retailers.get(body.retailer_id) if body.retailer_id else None
+    if body.retailer_id and not (stored and stored.get("policy")):
+        raise HTTPException(404, f"no ingested policy for retailer {body.retailer_id!r}")
+    if not stored and not body.policy_text.strip():
         raise HTTPException(400, "policy_text is empty")
     day = clock.get().day
     purchase = body.purchase if body.manual else body.purchase.model_copy(update={"purchase_day": day})
@@ -157,13 +160,16 @@ def add_purchase(body: NewPurchaseRequest, fresh: bool = False):
         existing = tracking.load(purchase.order_id)
         if existing and not fresh:
             return tracking.refresh(existing, day)
-    try:
-        policy = extract.merchant_policy(
-            body.policy_text, purchase.merchant, purchase.policy_url,
-            purchase.claim_form_url, fresh=fresh,
-        )
-    except (extract.ExtractionError, anthropic.AnthropicError) as e:
-        raise HTTPException(502, f"Couldn't read the store policy: {e}")
+    if stored:
+        policy = retailers.policy(stored).model_copy(update={"claim_form_url": purchase.claim_form_url})
+    else:
+        try:
+            policy = extract.merchant_policy(
+                body.policy_text, purchase.merchant, purchase.policy_url,
+                purchase.claim_form_url, fresh=fresh,
+            )
+        except (extract.ExtractionError, anthropic.AnthropicError) as e:
+            raise HTTPException(502, f"Couldn't read the store policy: {e}")
     tp = TrackedPurchase(
         purchase=purchase, policy=policy, timeline=[], lowest_seen=purchase.price_paid
     )
@@ -173,13 +179,38 @@ def add_purchase(body: NewPurchaseRequest, fresh: bool = False):
 
 @app.post("/policies/read", response_model=MerchantPolicy)
 def read_policy(body: ReadPolicyRequest, fresh: bool = False):
-    """Extract terms from the policy page open in the shopper's tab (any store)."""
+    """Terms for the store the shopper's tab is on. A major retailer we've
+    ingested returns its full policy (merged from several pages) from any page
+    on its site; any other store is read from the open page."""
+    stored = retailers.find(body.url)
+    if stored and stored.get("policy") and not fresh:
+        return retailers.policy(stored)
     if len(body.text.strip()) < 200:
         raise HTTPException(400, "This page doesn't have enough text to be a policy.")
     try:
         return extract.merchant_policy(body.text, body.site_name, body.url, "", fresh=fresh)
     except (extract.ExtractionError, anthropic.AnthropicError) as e:
         raise HTTPException(502, f"Couldn't read this page's policy: {e}")
+
+
+@app.get("/retailers")
+def list_retailers():
+    """Ingested retailers and how complete each one's policy is."""
+    out = []
+    for rec in retailers.all_records():
+        pol = rec.get("policy") or {}
+        pm = pol.get("price_match", {})
+        out.append({
+            "id": rec["id"],
+            "name": rec["name"],
+            "domains": rec["domains"],
+            "ingested_at": rec.get("ingested_at"),
+            "pages": [{k: p[k] for k in ("topic", "url", "status")} for p in rec["pages"]],
+            "return_window_days": (pol.get("return_window_days") or {}).get("value"),
+            "price_adjustment_days": (pm.get("window_days") or {}).get("value"),
+            "price_adjustment_offered": (pm.get("allowed") or {}).get("value"),
+        })
+    return out
 
 
 @app.post("/purchases/{order_id}/price", response_model=TrackedPurchase)

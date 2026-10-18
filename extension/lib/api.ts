@@ -51,8 +51,16 @@ export const getState = () => call<PanelState>("/state")
 export const getPurchases = () => call<TrackedPurchase[]>("/purchases")
 export const getAlerts = () => call<Alert[]>("/alerts")
 
-export const trackPurchase = (purchase: Purchase, policyText: string, manual = false) =>
-  call<TrackedPurchase>("/purchases", post({ purchase, policy_text: policyText, manual }))
+export const trackPurchase = (
+  purchase: Purchase,
+  policyText: string,
+  manual = false,
+  retailerId: string | null = null
+) =>
+  call<TrackedPurchase>(
+    "/purchases",
+    post({ purchase, policy_text: policyText, manual, retailer_id: retailerId })
+  )
 
 export const readPolicy = (url: string, text: string, siteName: string | null) =>
   call<MerchantPolicy>("/policies/read", post({ url, text, site_name: siteName }))

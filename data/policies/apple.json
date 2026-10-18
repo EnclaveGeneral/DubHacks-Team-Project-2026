@@ -1,0 +1,117 @@
+{
+  "id": "apple",
+  "name": "Apple",
+  "domains": [
+    "apple.com"
+  ],
+  "notes": "14-day returns; refund of difference if Apple lowers price within 14 days of receipt (excludes limited-time sales).",
+  "ingested_at": "2026-10-18T09:40:24Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.apple.com/shop/help/returns_refund",
+      "status": "ok",
+      "chars": 7135
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html",
+      "status": "ok",
+      "chars": 8498
+    }
+  ],
+  "policy": {
+    "merchant": "Apple",
+    "source_url": "https://www.apple.com/shop/help/returns_refund",
+    "return_window_days": {
+      "value": 14,
+      "quote": "You have 14 calendar days to return an item from the date you received it.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.apple.com/shop/help/returns_refund"
+    },
+    "exchange_window_days": {
+      "value": 14,
+      "quote": "In the unlikely event a product is not what you expected, you can return or exchange it with a receipt within 14 days of the date you receive the product from Apple.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+    },
+    "price_match": {
+      "allowed": {
+        "value": true,
+        "quote": "Should Apple reduce the price on any Apple-branded product within 14 calendar days from the date you receive your product, visit an Apple Store location or contact Retail Customer Care at 1-800-MY-APPLE within 14 days of the price change to request a refund or credit of the difference in price.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+      },
+      "window_days": {
+        "value": 14,
+        "quote": "Should Apple reduce the price on any Apple-branded product within 14 calendar days from the date you receive your product, visit an Apple Store location or contact Retail Customer Care at 1-800-MY-APPLE within 14 days of the price change to request a refund or credit of the difference in price.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+      },
+      "conditions": [
+        {
+          "value": "Product must be Apple-branded and the price reduction must occur within 14 calendar days of the date you receive it",
+          "quote": "Should Apple reduce the price on any Apple-branded product within 14 calendar days from the date you receive your product, visit an Apple Store location or contact Retail Customer Care at 1-800-MY-APPLE within 14 days of the price change to request a refund or credit of the difference in price.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+        },
+        {
+          "value": "Request must be made within 14 days of the price change",
+          "quote": "Should Apple reduce the price on any Apple-branded product within 14 calendar days from the date you receive your product, visit an Apple Store location or contact Retail Customer Care at 1-800-MY-APPLE within 14 days of the price change to request a refund or credit of the difference in price.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+        },
+        {
+          "value": "Excludes limited-time price reductions and special sales events such as Black Friday",
+          "quote": "This excludes limited-time price reductions and special sales events, such as Black Friday.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+        },
+        {
+          "value": "Limited to 10 units of a particular product",
+          "quote": "Price protection is limited to 10 units of a particular product and we may require that you have the product with you and/or have proof of possession to use it.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+        },
+        {
+          "value": "May require having the product with you and/or proof of possession",
+          "quote": "Price protection is limited to 10 units of a particular product and we may require that you have the product with you and/or have proof of possession to use it.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+        }
+      ]
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "visit an Apple Store location or call Retail Customer Care at 1-800-MY-APPLE",
+      "quote": "Should Apple reduce the price on any Apple-branded product within 14 calendar days from the date you receive your product, visit an Apple Store location or contact Retail Customer Care at 1-800-MY-APPLE within 14 days of the price change to request a refund or credit of the difference in price.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.apple.com/legal/sales-support/sales-policies/retail_us.html"
+    },
+    "retailer_id": "apple"
+  }
+}

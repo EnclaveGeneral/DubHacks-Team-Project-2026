@@ -1,0 +1,124 @@
+{
+  "id": "bathandbodyworks",
+  "name": "Bath & Body Works",
+  "domains": [
+    "bathandbodyworks.com"
+  ],
+  "notes": "One-time price adjustment within 14 days (store with receipt, online via chat); flash sales and short promos excluded.",
+  "ingested_at": "2026-10-18T09:42:03Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410663128339-Website-Purchase-Return-Policy",
+      "status": "ok",
+      "chars": 9604
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments",
+      "status": "ok",
+      "chars": 1500
+    }
+  ],
+  "policy": {
+    "merchant": "Bath & Body Works",
+    "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410663128339-Website-Purchase-Return-Policy",
+    "return_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "exchange_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "price_match": {
+      "allowed": {
+        "value": true,
+        "quote": "A one-time price adjustment from the original selling price to the current selling price can be issued within 14 days after the date of original purchase:",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+      },
+      "window_days": {
+        "value": 14,
+        "quote": "A one-time price adjustment from the original selling price to the current selling price can be issued within 14 days after the date of original purchase:",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+      },
+      "conditions": [
+        {
+          "value": "One-time adjustment only, requested within 14 days of original purchase",
+          "quote": "A one-time price adjustment from the original selling price to the current selling price can be issued within 14 days after the date of original purchase:",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+        },
+        {
+          "value": "Online purchase adjustments cannot be completed in stores",
+          "quote": "Price adjustments for online purchases cannot be completed in stores.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+        },
+        {
+          "value": "Does not apply to Flash Sales, promotions lasting 48 hours or less, Candle Day pricing, TikTok pricing, email offers or Scent-Scription orders",
+          "quote": "Price adjustments do not apply to Flash Sales, select promotions lasting 48 hours or less, Candle Day event pricing, TikTok pricing, email offers or Scent-Scription orders.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+        },
+        {
+          "value": "Online purchases cannot be adjusted to in-store pricing or promotions",
+          "quote": "We are unable to price match or price adjust online purchases to in-store pricing or promotions.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+        },
+        {
+          "value": "Must provide order number and current selling price on BathandBodyWorks.com",
+          "quote": "To receive a price adjustment for online purchases, locate your order number and the current selling price available on BathandBodyWorks.com and chat with us.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+        },
+        {
+          "value": "Must be made in the country of original purchase",
+          "quote": "Price adjustments must be made in the country of original purchase.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+        }
+      ]
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": true,
+      "quote": "Original Receipt — Ninety days or less from the original purchase date, credit card, debit card and PayPal purchase refunds will be issued based on the original tender; thereafter merchandise credit will be issued.",
+      "clause": null,
+      "confidence": "low",
+      "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410663128339-Website-Purchase-Return-Policy"
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "chat with us with your order number and the current BathandBodyWorks.com price",
+      "quote": "To receive a price adjustment for online purchases, locate your order number and the current selling price available on BathandBodyWorks.com and chat with us.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://customercare.bathandbodyworks.com/hc/en-us/articles/4410658872723-Price-Adjustments"
+    },
+    "retailer_id": "bathandbodyworks"
+  }
+}

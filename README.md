@@ -80,7 +80,26 @@ Demo flow: open the **Ridgeline Rain Jacket**, pick a size, **Buy now** → **Pl
 
 BackPocket also reads policies on real retailers' sites. Open a store's return or price-adjustment policy page (for example [Target's Price Match Guarantee](https://www.target.com/help/articles/policies-guidelines/price-match-guarantee)) and choose **Read this page** in the panel. It shows the windows, how to ask, and the conditions, each with the page's own wording. From there, **Track a purchase** adds an order by hand. BackPocket can't check prices on real sites, so use **Saw a lower price?** when you spot a drop; for stores without a web form, **Draft a request message** writes a message citing the policy for you to send through the store's chat or email.
 
+For the 20 largest US retailers (by the NRF Top 100 list, skipping grocery, pharmacy, and convenience chains), BackPocket already has the full policy: **Read this page** anywhere on, say, nordstrom.com returns Nordstrom's terms merged from its returns page and its pricing policy page, each term quoted and linked to the page it came from. See [Retailer policy dataset](#retailer-policy-dataset).
+
 Reading any page needs the extension's `<all_urls>` host permission. It only reads a page when you click **Read this page**.
+
+## Retailer policy dataset
+
+`data/retailers.json` lists each retailer's official policy pages (returns, price adjustment). `service/ingest.py` turns it into `data/policies/<id>.json`:
+
+1. Renders each page in Chromium (most help centers are JavaScript-rendered or block plain fetches) and reads the visible text, opening collapsed sections.
+2. If a page moved (404, empty), follows a same-site link whose text names the topic; if a page points to a fuller policy ("View our Pricing Policy for details"), reads that too.
+3. Extracts each page with Claude, checks every quote word for word against that page, and merges the pages field by field (returns terms from the returns page, adjustment terms from the adjustment page), keeping the source page on every term.
+
+```sh
+cd service
+../.venv/Scripts/python ingest.py                     # all retailers (re-uses page snapshots and the extraction cache)
+../.venv/Scripts/python ingest.py --only macys --refetch   # re-render one retailer's pages
+../.venv/Scripts/python ingest.py --headed            # visible browser, for sites that block headless
+```
+
+It prints a coverage table. Retailers whose pages block automated browsers are reported as blocked and fall back to reading the open page live. `GET /retailers` on the service lists what's ingested.
 
 ## Tests
 

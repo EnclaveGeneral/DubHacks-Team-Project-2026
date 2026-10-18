@@ -7,6 +7,7 @@ export interface Cited<T> {
   quote: string | null
   clause: string | null
   confidence: Confidence
+  source_url?: string | null // page the quote came from, when terms span several pages
 }
 
 export interface MerchantPolicy {
@@ -20,8 +21,10 @@ export interface MerchantPolicy {
     conditions: Cited<string>[]
   }
   manufacturer_warranty_months: Cited<number>
+  returns_unlimited?: Cited<boolean>
   claim_form_url: string // "" when claims go by chat, phone, or email
   how_to_request: Cited<string>
+  retailer_id?: string | null // set when the policy comes from the ingested retailer dataset
 }
 
 export interface Protection {
@@ -68,6 +71,7 @@ export interface TimelineWindow {
   closes_day: number
   status: "open" | "closing_soon" | "closed" | "claimed"
   long_term: boolean
+  open_ended?: boolean // no closing date (e.g. returns with no time limit)
   citation: Cited<string | number | boolean>
 }
 

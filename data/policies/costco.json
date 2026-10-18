@@ -1,0 +1,24 @@
+{
+  "id": "costco",
+  "name": "Costco",
+  "domains": [
+    "costco.com"
+  ],
+  "notes": "Costco.com price adjustment if price drops within 30 days of purchase; no competitor matching.",
+  "ingested_at": "2026-10-18T09:45:54Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://customerservice.costco.com/app/answers/detail/a_id/1191/~/what-is-costcos-return-policy",
+      "status": "blocked",
+      "chars": 39
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://customerservice.costco.com/app/answers/detail/a_id/628/~/price-adjustment---costco.com-orders",
+      "status": "blocked",
+      "chars": 39
+    }
+  ],
+  "policy": null
+}
