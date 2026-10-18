@@ -89,17 +89,17 @@ export interface SelectedCard {
 export interface Alert {
   id: string
   purchase_id: string
-  kind: "price_drop_claimable" | "price_drop_declined" | "window_closing" | "card_protection"
+  kind: "price_drop_claimable" | "return_rebuy" | "window_closing" | "card_protection"
   title: string
   body: string
   money: {
     refund: number
-    points_reversed: number
+    points_reversed: number // net points lost; negative means points gained
     net_estimate: number
     is_estimate: boolean
   } | null
   citations: Cited<string | number | boolean>[]
-  action: "prepare_claim" | null
+  action: "prepare_claim" | "prepare_return" | null
   created_day: number
 }
 

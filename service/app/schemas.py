@@ -113,9 +113,7 @@ class ReportPrice(BaseModel):
 # ---------- Engine output ----------
 
 WindowStatus = Literal["open", "closing_soon", "closed", "claimed"]
-AlertKind = Literal[
-    "price_drop_claimable", "price_drop_declined", "window_closing", "card_protection"
-]
+AlertKind = Literal["price_drop_claimable", "return_rebuy", "window_closing", "card_protection"]
 
 
 class TimelineWindow(BaseModel):
@@ -130,7 +128,7 @@ class TimelineWindow(BaseModel):
 
 class Money(BaseModel):
     refund: float
-    points_reversed: int
+    points_reversed: int  # net points lost; negative means points gained
     net_estimate: float
     is_estimate: bool = True
 
@@ -143,7 +141,7 @@ class Alert(BaseModel):
     body: str
     money: Money | None = None
     citations: list[Cited[str | int | float | bool]] = []
-    action: Literal["prepare_claim"] | None = None
+    action: Literal["prepare_claim", "prepare_return"] | None = None
     created_day: int
 
 

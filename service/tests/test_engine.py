@@ -63,49 +63,75 @@ def test_claim_filed_hides_offer_and_marks_timeline():
     assert tl[0].status == "claimed"
 
 
-def test_day14_last_day_then_window_closes():
+def test_day14_last_day_then_rebuy_takes_over():
     walk = {0: 140.0, 3: 110.0, 14: 110.0, 15: 110.0}
     [a] = [a for a in run(14, walk=walk) if a.kind == "price_drop_claimable"]
     assert "0 days left" in a.body
-    assert kinds(run(15, walk=walk)) == []  # no new drop after the window: quiet
+    # Day 15: adjustment window closed, unclaimed, return window open -> rebuy.
+    [b] = [a for a in run(15, walk=walk) if a.kind != "card_protection"]
+    assert b.kind == "return_rebuy" and b.title == "Save $30 by returning and rebuying"
 
 
-def test_day20_drop_outside_window_is_declined():
-    [a] = [a for a in run(20) if a.kind.startswith("price_drop")]
-    assert a.kind == "price_drop_declined"
-    assert a.action is None
-    assert "$95" in a.body and "$45" in a.body and "Clause 4.2" in a.body
-    assert a.citations[0].clause == "4.2"
+def test_day20_offers_return_and_rebuy_not_a_dead_end():
+    [a] = [a for a in run(20) if a.kind != "card_protection"]
+    assert a.kind == "return_rebuy"
+    assert a.action == "prepare_return"
+    assert a.title == "Save $45 by returning and rebuying"
+    # Why no adjustment, and the return clause it relies on.
+    assert "isn't available anymore: clause 4.2" in a.body
+    assert "10 days left" in a.body and "$95" in a.body and "$140 refund" in a.body
+    assert [c.clause for c in a.citations][:2] == ["3.1", "4.2"]
+    # Points: lose 420 on the refund, earn 285 on the rebuy -> net 135 lost.
+    assert (a.money.refund, a.money.points_reversed, a.money.net_estimate) == (45.0, 135, 43.65)
 
 
-def test_day20_declined_even_if_presenter_skips_day3():
-    [a] = [a for a in run(20, walk={0: 140.0, 20: 95.0}) if a.kind.startswith("price_drop")]
-    assert a.kind == "price_drop_declined"
+def test_day20_rebuy_even_if_presenter_skips_day3():
+    [a] = [a for a in run(20, walk={0: 140.0, 20: 95.0}) if a.kind != "card_protection"]
+    assert a.kind == "return_rebuy"
 
 
-def test_day28_return_warning_ignores_pending_claim():
-    [a] = [a for a in run(28, claims=["price_match"]) if a.kind == "window_closing"]
-    assert a.title == "Return window closes in 2 days"
-    assert a.money.refund == 140.0
-    assert a.money.points_reversed == 420
-    assert "before pending price adjustment" in a.body
+def test_rebuy_after_claim_counts_the_pending_adjustment():
+    [a] = [a for a in run(20, claims=["price_match"]) if a.kind != "card_protection"]
+    assert a.title == "Save $15 by returning and rebuying"
+    assert "$110 refund" in a.body and "pending $30 price adjustment" in a.body
+    assert (a.money.refund, a.money.points_reversed) == (15.0, 45)
 
 
-def test_day30_closes_today_day31_gone():
-    walk = {0: 140.0, 30: 95.0, 31: 95.0}
+def test_day28_rebuy_carries_the_deadline_no_duplicate_warning():
+    found = [a for a in run(28, claims=["price_match"]) if a.kind != "card_protection"]
+    assert [a.kind for a in found] == ["return_rebuy"]
+    assert "2 days left" in found[0].body
+
+
+def test_return_warning_when_price_is_not_lower():
+    walk = {0: 140.0, 27: 140.0, 28: 140.0, 30: 140.0}
+    [a] = [a for a in run(28, walk=walk) if a.kind != "card_protection"]
+    assert a.kind == "window_closing" and a.title == "Return window closes in 2 days"
+    assert (a.money.refund, a.money.points_reversed) == (140.0, 420)
+    assert a.action == "prepare_return"
     assert [a.title for a in run(30, walk=walk) if a.kind == "window_closing"] == [
         "Return window closes today"
     ]
-    assert [a for a in run(31, walk=walk) if a.kind == "window_closing"] == []
 
 
-def test_store_without_price_match_declines():
+def test_nothing_actionable_means_no_alert():
+    walk = {0: 140.0, 31: 95.0}
+    assert kinds(run(31, walk=walk)) == []
+
+
+def test_return_requested_stops_return_offers():
+    assert kinds(run(20, claims=["price_match", "return"])) == []
+    tl = engine.timeline(PURCHASE, POLICY, CARD, 20, ["price_match", "return"])
+    assert [w.status for w in tl if w.label == "Return"] == ["claimed"]
+
+
+def test_store_without_price_match_offers_rebuy():
     policy = POLICY.model_copy(deep=True)
     policy.price_match.allowed = Cited()
     policy.price_match.window_days = Cited()
     [a] = engine.alerts(PURCHASE, policy, CARD, 3, {3: 110.0}, [])[:1]
-    assert a.kind == "price_drop_declined"
-    assert "no price adjustment clause" in a.body
+    assert a.kind == "return_rebuy"
+    assert "doesn't offer price adjustments" in a.body
 
 
 def test_card_protection_flagged_and_hedged():

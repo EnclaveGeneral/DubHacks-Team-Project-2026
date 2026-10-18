@@ -42,8 +42,8 @@ Design rules:
 3. Timeline shows four windows: 30-day return, 14-day price match, 1-year manufacturer warranty, card warranty extension.  
 4. Day 3: price drops to \$110. Card: "Price dropped \$30. Clause 4.2 allows a price match within 14 days; 11 days left. Net after points reversal: about \$29." Button: "Prepare claim."  
 5. The extension fills the store's price-match form with highlighted fields. Shopper reads, edits if needed, and submits. The timeline marks the claim as filed.  
-6. Day 20: second drop, outside the window. Agent explains no claim is available, citing the clause. No form is prepared.  
-7. Day 28: "Return window closes in 2 days. Returning refunds \$140 and reverses about 420 points." The decision stays with the shopper.
+6. Day 20: second drop. Agent explains another price adjustment isn't allowed, citing the clause, and offers the option that is: return and rebuy ("Save \$15"), citing the return clause. It prepares the return form; the shopper decides.  
+7. Day 28: the return & rebuy offer now shows 2 days left. The decision stays with the shopper.
 
 ## **5\. Architecture**
 
@@ -74,7 +74,7 @@ Stretch goal: a second mock store whose claim form uses different field labels a
 * **Transparency:** cited sentence on every suggestion, from either document; agent-filled fields highlighted; links to the full policy and benefits guide.  
 * **Accuracy:** card terms vary by issuer, so card figures are estimates with their source clause, and protections are phrased as "may cover." A wrong coverage claim is worse than none.  
 * **Privacy:** uses the shopper's own order, the store's public policy, and the card's public benefits guide; no card number, no issuer login, no cross-merchant profile.  
-* **Responsible AI:** LLM extracts fields, deterministic code evaluates dates, prices, and points; low-confidence extractions ask the shopper to confirm. The agent declines when the terms do not support a claim.
+* **Responsible AI:** LLM extracts fields, deterministic code evaluates dates, prices, and points; low-confidence extractions ask the shopper to confirm. The agent never offers a claim the terms don't support: when a price adjustment isn't allowed it says why, citing the clause, and offers only what is (for example, return and rebuy).
 
 ## **7\. Rubric alignment**
 
@@ -84,15 +84,15 @@ Stretch goal: a second mock store whose claim form uses different field labels a
 | User Experience | 20% / 25% (rubric conflicts; confirm) | One side panel, one click to a filled form, 30 days in 3 minutes | High |
 | Technology Execution | 20% | Two schema-bound extraction pipelines, form mapping, deterministic logic, simulated clock | Medium (higher with the second-store stretch goal) |
 | Commerce Impact | 15% | Card visibly protects the purchase (top of wallet); fewer disputes and chargebacks | Medium-high |
-| Trust & Responsibility | 15% | Shopper submits every claim, cited clauses, hedged card claims, no card data, declined-claim demo | High |
+| Trust & Responsibility | 15% | Shopper submits every claim, cited clauses, hedged card claims, no card data, declined-adjustment demo (with the allowed alternative) | High |
 
 ## **8\. Demo script (3 minutes)**
 
 * 0:00 Problem statement. Card is already set up; show the extracted benefits JSON for two seconds.  
 * 0:20 Buy the jacket; toggle BackPocket; timeline shows merchant and card windows.  
 * 0:50 Day 3 price drop → net after points → "Prepare claim" → highlighted form → shopper submits.  
-* 1:40 Day 20 drop outside window → agent declines, cites clause. (Rehearse this most.)  
-* 2:10 Day 28 return warning with points reversal.  
+* 1:40 Day 20 drop → agent says no second adjustment (cites clause 4.2) and offers return & rebuy instead (cites 3.1). (Rehearse this most.)  
+* 2:10 Day 28: same offer, 2 days left; prepare the return form, shopper submits.  
 * 2:30 Close: "It reads both sides of the purchase, and you make every decision." Name what was real vs. mocked.
 
 ## **9\. Build plan (24 hours, 3 people, freeze at hour 18\)**
@@ -109,13 +109,13 @@ Stretch goal: a second mock store whose claim form uses different field labels a
 
 Fourth person, if any: from hour 0, write the store policies (one with no price-match clause), the two fictional benefits guides, and the demo script.
 
-Cut list, in order: second store → day-28 return warning → manufacturer warranty window → card protections (keep the points line). Never cut the declined-claim case.
+Cut list, in order: second store → day-28 return warning → manufacturer warranty window → card protections (keep the points line). Never cut the day-20 "why not, and what instead" case.
 
 ## **10\. Risks**
 
 | Risk | Mitigation |
 | ----- | ----- |
-| "It's just a reminder app" | Lead with reading both documents and the filled form; show the declined case |
+| "It's just a reminder app" | Lead with reading both documents and the filled form; show the day-20 decline-and-alternative |
 | Misstating card coverage | Fictional benefits guides; every card claim hedged and cited |
 | Overclaiming Visa's role | Say "your card's benefits," not "Visa will cover this"; issuers set most terms |
 | Form filling fails on the page | Stable labels on the mock store; fire input events so React forms register values; test by hour 15 |

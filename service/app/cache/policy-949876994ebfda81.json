@@ -1,0 +1,40 @@
+{
+  "merchant_name": "Nordstrom",
+  "how_to_request": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  },
+  "return_window_days": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  },
+  "exchange_window_days": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  },
+  "price_match_allowed": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  },
+  "price_match_window_days": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  },
+  "price_match_conditions": [],
+  "manufacturer_warranty_months": {
+    "value": null,
+    "quote": null,
+    "clause": null,
+    "confidence": "high"
+  }
+}

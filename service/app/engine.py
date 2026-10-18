@@ -95,9 +95,10 @@ def timeline(
 
     if policy.return_window_days.value is not None:
         w = policy.return_window_days.value
+        status = "claimed" if "return" in claims_filed else _status(rel, 0, w)
         windows.append(TimelineWindow(
             label="Return", source="merchant", opens_day=d0, closes_day=d0 + w,
-            status=_status(rel, 0, w), citation=policy.return_window_days,
+            status=status, citation=policy.return_window_days,
         ))
 
     mfr_months = policy.manufacturer_warranty_months.value
@@ -145,82 +146,153 @@ def drop_events(price_paid: float, price_history: dict[int, float]) -> list[tupl
     return events
 
 
-def _price_alerts(purchase, policy, card, day, price_history, claims_filed) -> list[Alert]:
-    events = [(d, p) for d, p in drop_events(purchase.price_paid, price_history) if d <= day]
-    if not events:
-        return []
-    event_day, price = events[-1]
-    rel_event = event_day - purchase.purchase_day
-    rel_now = day - purchase.purchase_day
-    drop = purchase.price_paid - price
+def price_on(day: int, price_paid: float, price_history: dict[int, float]) -> float:
+    """Latest observed price on or before `day` (the paid price if none)."""
+    seen = [d for d in price_history if d <= day]
+    return price_history[max(seen)] if seen else price_paid
+
+
+def effective_paid(purchase: Purchase, policy: MerchantPolicy, price_history: dict[int, float],
+                   claims_filed: list[str]) -> float:
+    """What the shopper will have paid if a filed price adjustment is approved:
+    the lowest price seen inside the price-match window."""
+    w = policy.price_match.window_days.value
+    if "price_match" not in claims_filed or w is None:
+        return purchase.price_paid
+    d0 = purchase.purchase_day
+    in_window = [v for d, v in price_history.items() if d0 <= d <= d0 + w]
+    return min([purchase.price_paid, *in_window])
+
+
+def rebuy_money(refund: float, current: float, price_paid: float, card: CardBenefits | None) -> Money:
+    """Return for `refund`, buy again at `current`. Points: lose what the refund
+    reverses, earn points on the new purchase."""
+    savings = refund - current
+    if card is None or card.earn_rate_points_per_dollar.value is None:
+        return Money(refund=round(savings, 2), points_reversed=0, net_estimate=round(savings, 2))
+    earned = round(current * card.earn_rate_points_per_dollar.value)
+    lost = points_reversed(refund, price_paid, card) - earned
+    cents = card.point_value_cents.value or 0
+    return Money(refund=round(savings, 2), points_reversed=lost,
+                 net_estimate=round(savings - lost * cents / 100, 2))
+
+
+def _days(n: int) -> str:
+    return f"{n} day{'s' if n != 1 else ''}"
+
+
+def _clause(c: Cited, start: bool = True) -> str:
+    if c.clause:
+        return f"Clause {c.clause}" if start else f"clause {c.clause}"
+    return "The store's policy" if start else "the store's policy"
+
+
+def _adjustment_alert(purchase, policy, card, day, price_history, claims_filed) -> Alert | None:
+    """A price adjustment the shopper can request right now, if any."""
     pm = policy.price_match
     window = pm.window_days.value
-    oid = purchase.order_id
-
-    in_window = pm.allowed.value and window is not None and rel_event <= window
-    if in_window:
-        if "price_match" in claims_filed or rel_now > window:
-            return []
-        left = window - rel_now
-        m = money(drop, purchase.price_paid, card)
-        clause = f"Clause {pm.window_days.clause}" if pm.window_days.clause else "The store's policy"
-        return [Alert(
-            id=f"pm-{oid}-d{event_day}", purchase_id=oid, kind="price_drop_claimable",
-            title=f"Price dropped {_money_line(drop)}",
-            body=(
-                f"{clause} allows a price match within {window} days; "
-                f"{left} day{'s' if left != 1 else ''} left. "
-                f"Net after points reversal: about {_money_line(round(m.net_estimate))} (estimate)."
-            ),
-            money=m, citations=[pm.window_days, *_points_citation(card)],
-            action="prepare_claim", created_day=event_day,
-        )]
-
-    # Not claimable: outside the window, or no price-match clause at all.
-    if pm.allowed.value and window is not None:
-        clause = f"Clause {pm.window_days.clause}" if pm.window_days.clause else "The store's policy"
-        reason = (
-            f"{clause} allows price adjustments only within {window} days of purchase, "
-            f"and that window closed on day {purchase.purchase_day + window}."
-        )
-        citations = [pm.window_days]
-    elif pm.allowed.value is False:
-        reason = "The store's policy says it does not adjust prices after purchase."
-        citations = [pm.allowed]
-    else:
-        reason = "The store's policy has no price adjustment clause."
-        citations = []
-    return [Alert(
-        id=f"pm-{oid}-d{event_day}", purchase_id=oid, kind="price_drop_declined",
-        title="Price dropped, but no claim is available",
+    if not pm.allowed.value or window is None or "price_match" in claims_filed:
+        return None
+    rel_now = day - purchase.purchase_day
+    if rel_now > window:
+        return None
+    events = [(d, p) for d, p in drop_events(purchase.price_paid, price_history)
+              if d <= day and d - purchase.purchase_day <= window]
+    if not events:
+        return None
+    event_day, price = events[-1]
+    drop = purchase.price_paid - price
+    m = money(drop, purchase.price_paid, card)
+    return Alert(
+        id=f"pm-{purchase.order_id}-d{event_day}", purchase_id=purchase.order_id,
+        kind="price_drop_claimable", title=f"Price dropped {_money_line(drop)}",
         body=(
-            f"The {purchase.item_name} is now {_money_line(price)}, "
-            f"{_money_line(drop)} below what you paid. {reason} BackPocket won't prepare a form."
+            f"{_clause(pm.window_days)} allows a price match within {window} days; "
+            f"{_days(window - rel_now)} left. Net after points reversal: about "
+            f"{_money_line(round(m.net_estimate))} (estimate)."
         ),
-        money=None, citations=citations, action=None, created_day=event_day,
-    )]
+        money=m, citations=[pm.window_days, *_points_citation(card)],
+        action="prepare_claim", created_day=event_day,
+    )
+
+
+def _rebuy_alert(purchase, policy, card, day, price_history, claims_filed) -> Alert | None:
+    """When a price adjustment isn't available but the return window is open
+    and the price is lower: return the item and buy it again."""
+    rw = policy.return_window_days.value
+    if rw is None or "return" in claims_filed:
+        return None
+    left = purchase.purchase_day + rw - day
+    if left < 0:
+        return None
+    paid_now = effective_paid(purchase, policy, price_history, claims_filed)
+    current = price_on(day, purchase.price_paid, price_history)
+    if current >= paid_now - 0.005:
+        return None
+
+    pm = policy.price_match
+    window = pm.window_days.value
+    if "price_match" in claims_filed:
+        why_not = "You've already used your one price adjustment, and the price has dropped again."
+        why_cites = [pm.window_days] if pm.window_days.quote else []
+    elif pm.allowed.value and window is not None:
+        why_not = (
+            f"A price adjustment isn't available anymore: {_clause(pm.window_days, start=False)} "
+            f"allows one only within {window} days of purchase."
+        )
+        why_cites = [pm.window_days]
+    elif pm.allowed.value is False:
+        why_not = "This store doesn't offer price adjustments."
+        why_cites = [pm.allowed] if pm.allowed.quote else []
+    else:
+        why_not = "This store's policy doesn't offer price adjustments."
+        why_cites = []
+
+    m = rebuy_money(paid_now, current, purchase.price_paid, card)
+    pending = (
+        f" This assumes your pending {_money_line(purchase.price_paid - paid_now)} price adjustment is approved."
+        if paid_now < purchase.price_paid else ""
+    )
+    return Alert(
+        id=f"rebuy-{purchase.order_id}-p{current:g}", purchase_id=purchase.order_id,
+        kind="return_rebuy",
+        title=f"Save {_money_line(m.refund)} by returning and rebuying",
+        body=(
+            f"{why_not} The return window is still open "
+            f"({'it closes today' if left == 0 else _days(left) + ' left'}). Buy it again at "
+            f"{_money_line(current)}, then return the original for a {_money_line(paid_now)} refund."
+            f"{pending} Check that the new order isn't marked Final Sale."
+        ),
+        money=m,
+        citations=[policy.return_window_days, *why_cites, *_points_citation(card)],
+        action="prepare_return", created_day=day,
+    )
 
 
 # ---------- Window warnings + card protections ----------
 
 
-def _return_alert(purchase, policy, card, day, claims_filed) -> list[Alert]:
+def _return_alert(purchase, policy, card, day, price_history, claims_filed) -> list[Alert]:
     w = policy.return_window_days.value
-    if w is None:
+    if w is None or "return" in claims_filed:
         return []
     left = purchase.purchase_day + w - day
     if not 0 <= left <= CLOSING_SOON_DAYS:
         return []
-    m = money(purchase.price_paid, purchase.price_paid, card)
-    pending = " (before pending price adjustment)" if claims_filed else ""
-    when = "today" if left == 0 else f"in {left} day{'s' if left != 1 else ''}"
+    refund = effective_paid(purchase, policy, price_history, claims_filed)
+    m = money(refund, purchase.price_paid, card)
+    pending = (
+        f" (if your pending {_money_line(purchase.price_paid - refund)} price adjustment is approved)"
+        if refund < purchase.price_paid else ""
+    )
+    when = "today" if left == 0 else f"in {_days(left)}"
     points = f" and reverses about {m.points_reversed} points" if m.points_reversed else ""
     return [Alert(
         id=f"ret-{purchase.order_id}", purchase_id=purchase.order_id, kind="window_closing",
         title=f"Return window closes {when}",
-        body=f"Returning refunds {_money_line(purchase.price_paid)}{points}{pending}. The decision is yours.",
+        body=f"Returning refunds {_money_line(refund)}{pending}{points}. The decision is yours.",
         money=m, citations=[policy.return_window_days, *_points_citation(card)],
-        action=None, created_day=day,
+        action="prepare_return", created_day=day,
     )]
 
 
@@ -264,12 +336,16 @@ def alerts(
     price_history: dict[int, float],
     claims_filed: list[str],
 ) -> list[Alert]:
-    """Current alerts, most urgent first."""
-    return [
-        *_return_alert(purchase, policy, card, day, claims_filed),
-        *_price_alerts(purchase, policy, card, day, price_history, claims_filed),
-        *_card_alerts(purchase, policy, card),
-    ]
+    """Only what the shopper can act on now, most valuable first. A price drop
+    the shopper can't act on produces no alert."""
+    out: list[Alert] = []
+    adjust = _adjustment_alert(purchase, policy, card, day, price_history, claims_filed)
+    rebuy = None if adjust else _rebuy_alert(purchase, policy, card, day, price_history, claims_filed)
+    out += [a for a in (adjust, rebuy) if a]
+    if not rebuy:  # the rebuy card already carries the return deadline
+        out += _return_alert(purchase, policy, card, day, price_history, claims_filed)
+    out += _card_alerts(purchase, policy, card)
+    return out
 
 
 def card_for(purchase: Purchase, card: CardBenefits | None, card_last4: str | None) -> CardBenefits | None:

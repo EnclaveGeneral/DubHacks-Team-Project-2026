@@ -61,14 +61,16 @@ Price schedule (store server, function of sim day):
 | --- | --- | --- |
 | 0–2 | $140 | Timeline only |
 | 3–19 | $110 | **Price drop $30, 11 days left** (on day 3). Net ≈ $30 − 90 pts × $0.01 = **$29.10 → "about $29"**. Offer "Prepare claim" |
-| 20+ | $95 | Drop is outside the 14-day window → **decline, cite clause 4.2**, no form |
+| 20+ | $95 | Price adjustment no longer possible (one already used; window closed, clause 4.2). Return window still open → **"Save $15 by returning and rebuying"**: buy again at $95, return the original for $110 (clause 3.1). "Prepare return form" |
 | 28 | — | **Return window closes in 2 days**; returning refunds $140, reverses ~420 pts (labeled "before pending price adjustment") |
 
-**Filed claims are *pending*.** The mock store never grants or denies a claim, so a filed claim does not change any later numbers: day 20 still compares against the $140 paid, and day 28 still shows $140 / 420 pts with the "before pending price adjustment" note. The engine tests for days 20 and 28 lock this in.
+**Filed claims are *pending*, and later offers assume they're approved.** The mock store never grants or denies a claim. After the day-3 claim, "what you paid" for later offers is the adjusted $110 (`engine.effective_paid`), and the card says it assumes the pending adjustment is approved. Day 20 and 28 both show return & rebuy saving $15 (about $14.55 after 45 points). Without the day-3 claim, the same days save $45 (about $43.65 after 135 points).
+
+**Only actionable alerts.** The panel never shows a dead end like "no claim available." A price drop the shopper can't act on (no adjustment, return window closed) produces no alert; when the adjustment isn't available but returns are, the alert is return & rebuy, and it explains why the adjustment isn't possible with the clause. The plain "return window closes" warning only appears when the price isn't lower (the rebuy card already carries the deadline).
 
 Second fictional card (for setup screen only, and to show a different rule): *Cascade Cash Visa ending 9021*, 1.5% cash back, adjustments under $50 do not reverse rewards, return protection 90 days up to $250.
 
-Second store policy (A's or writer's job): **no price-match clause**, so the declined path can also be shown on a different store if time allows.
+Second store policy (A's or writer's job): **no price-match clause**, so the return & rebuy path (no adjustment offered) can also be shown on a different store if time allows.
 
 ---
 
@@ -142,7 +144,7 @@ After extraction, the service **checks that `quote` is a verbatim substring of t
 {
   "id": "pm-RO-10482-d3",
   "purchase_id": "RO-10482",
-  "kind": "price_drop_claimable" | "price_drop_declined" | "window_closing" | "card_protection",
+  "kind": "price_drop_claimable" | "return_rebuy" | "window_closing" | "card_protection",
   "title": "Price dropped $30",
   "body": "Clause 4.2 allows a price match within 14 days; 11 days left.",
   "money": { "refund": 30.00, "points_reversed": 90, "net_estimate": 29.10, "is_estimate": true },
@@ -220,12 +222,12 @@ CORS: FastAPI's `CORSMiddleware` does not accept wildcards like `chrome-extensio
 
 `engine.timeline(purchase, policy, card, day, claims)` and `engine.alerts(purchase, policy, card, day, price_history, claims)`
 
-- Keep `price_history` (store day → price observed) per purchase in the DB, plus `lowest_seen`. Every `/alerts` or `/purchases` call records the store's price **keyed by the store's own day** (so a poll racing a clock change can't misfile a price). A "drop event" is a day whose price is below every earlier price; the latest one decides claimable vs. declined, so the day-20 decline works even if the presenter skips day 3. A price-match drop is measured against `price_paid` (claims are pending; see section 2).
+- Keep `price_history` (store day → price observed) per purchase in the DB, plus `lowest_seen`. Every `/alerts` or `/purchases` call records the store's price **keyed by the store's own day** (so a poll racing a clock change can't misfile a price). A "drop event" is a day whose price is below every earlier price; the latest one inside the price-match window decides the adjustment offer; after that, return & rebuy compares today's price with what the shopper effectively paid, so day 20 works even if the presenter skips day 3. A price-match drop is measured against `price_paid` (claims are pending; see section 2).
 - Purchase writes hold `tracking.lock`: the side panel polls every 2 s and would otherwise overwrite a claim marked filed in between.
 
 - Windows: return, exchange, price match from policy; manufacturer warranty; card extended warranty = manufacturer months + `extends_months` if original ≤ max.
 - `closing_soon` when ≤ 3 days left.
-- Price watch: if `current_price < lowest_seen`: inside window and `price_match.allowed` → `price_drop_claimable`; otherwise `price_drop_declined` citing the window clause (or the absence of a clause).
+- Price watch: a drop inside an open, unclaimed price-match window → `price_drop_claimable` (action `prepare_claim`). Otherwise, if today's price is below what the shopper effectively paid and the return window is open → `return_rebuy` (action `prepare_return`), citing the return clause and why no adjustment is possible. Otherwise nothing. Points for rebuy = points the refund reverses minus points earned on the new purchase.
 - Points: `points_reversed = round(refund × earn_rate)` under `proportional`; `net = refund − points_reversed × point_value`. Always `is_estimate: true`.
 - Card protections always say "may cover; confirm with your issuer."
 - **Unit tests for days 0, 3, 14, 15, 20, 28, 30** using the numbers in section 2. Write these first; they define done for the engine.
@@ -306,7 +308,7 @@ Checkpoints in **bold** are the moments the three tracks must meet. Don't skip t
 
 ### Hours 18–23: rehearsal + polish
 
-- [ ] Rehearse the 3-minute script (PLAN.md §8) at least 5×, the day-20 decline most
+- [ ] Rehearse the 3-minute script (PLAN.md §8) at least 5×, the day-20 return & rebuy most
 - [ ] Record a backup demo video
 - [ ] Devpost write-up: what's real vs. mocked
 - [ ] **H23: submit**
@@ -319,8 +321,8 @@ Checkpoints in **bold** are the moments the three tracks must meet. Don't skip t
 2. Buying the jacket and toggling shows four windows (return 30d, price match 14d, warranty 1y, card warranty +1y).
 3. Day 3: "Price dropped $30 … 11 days left … about $29" with clause 4.2 quoted.
 4. "Prepare claim" fills every claim field, highlighted, submit untouched; shopper submits; timeline marks claimed.
-5. Day 20: decline with clause 4.2 quoted; "Prepare claim" not shown.
-6. Day 28: return closes in 2 days; refunds $140, reverses ~420 pts, labeled "before pending price adjustment."
+5. Day 20: no price adjustment (already used, clause 4.2); instead "Save $15 by returning and rebuying" with clause 3.1, and "Prepare return form".
+6. Day 28: the same offer with 2 days left; no separate return warning. Preparing and submitting the return marks it requested and clears the offers.
 7. Works with Wi-Fi off (cached extractions, local servers), apart from the optional live-extraction moment.
 
 ---

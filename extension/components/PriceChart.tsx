@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react"
 
 import { isoDate } from "~lib/claim"
-import type { TrackedPurchase } from "~lib/types"
+import type { TimelineWindow, TrackedPurchase } from "~lib/types"
 
-// Price since purchase as a step line against what the shopper paid.
-// The shaded band is the price-match window; the green wash is money the
-// shopper can claim (a drop inside the window), gray is a drop outside it.
-// Single series: no legend, the title names it (dataviz skill).
+// Price since purchase (step line) against what the shopper paid, over the
+// windows when they can act on a lower price:
+//   green band  = price adjustment window
+//   violet band = return & rebuy (price adjustment over, returns still open)
+// The legend above the plot names the bands, so no text sits inside the
+// plot except "Paid" and the current price, which are placed to avoid
+// overlapping each other and the edges.
 
 const H = 150
-const PAD = { top: 24, right: 44, bottom: 20, left: 8 }
+const PAD = { top: 8, right: 44, bottom: 20, left: 6 }
+const CHAR_W = 6.4 // approx width of an 11px character, for label collision checks
 
 const shortDate = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", {
@@ -27,6 +31,52 @@ function niceTicks(lo: number, hi: number): number[] {
   const ticks = []
   for (let v = Math.floor(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(v)
   return ticks
+}
+
+interface Box {
+  x0: number
+  x1: number
+  y0: number
+  y1: number
+}
+const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
+
+interface Band {
+  key: "adjust" | "rebuy"
+  from: number
+  to: number
+  label: string
+  state: string
+}
+
+function bandsFor(tp: TrackedPurchase, baseDate: string): Band[] {
+  const d0 = tp.purchase.purchase_day
+  const pm = tp.timeline.find((w) => w.label === "Price match")
+  const ret = tp.timeline.find((w) => w.label === "Return")
+  const until = (w: TimelineWindow) => `through ${shortDate(isoDate(baseDate, w.closes_day))}`
+  const bands: Band[] = []
+  if (pm) {
+    bands.push({
+      key: "adjust",
+      from: pm.opens_day,
+      to: pm.closes_day,
+      label: "Price adjustment",
+      state: pm.status === "claimed" ? "claimed" : until(pm)
+    })
+  }
+  if (ret) {
+    const from = pm ? Math.max(pm.closes_day, d0) : d0
+    if (ret.closes_day > from) {
+      bands.push({
+        key: "rebuy",
+        from,
+        to: ret.closes_day,
+        label: "Return & rebuy",
+        state: ret.status === "claimed" ? "return requested" : until(ret)
+      })
+    }
+  }
+  return bands
 }
 
 interface Props {
@@ -50,8 +100,7 @@ export default function PriceChart({ tp, today, baseDate }: Props) {
 
   const p = tp.purchase
   const d0 = p.purchase_day
-  const pm = tp.timeline.find((w) => w.label === "Price match")
-  const ret = tp.timeline.find((w) => w.label === "Return")
+  const bands = bandsFor(tp, baseDate)
 
   // Observed prices (store day -> price), starting from what was paid.
   const points = useMemo(() => {
@@ -72,153 +121,132 @@ export default function PriceChart({ tp, today, baseDate }: Props) {
     for (const [d, price] of points) if (d <= day) v = price
     return v
   }
+  const optionOn = (day: number) => {
+    const b = bands.find((band) => day >= band.from && day <= band.to)
+    return b ? `${b.label} window` : "No return or adjustment"
+  }
 
-  const xMax = Math.max(d0 + 30, ret?.closes_day ?? 0, today + 2)
+  const xMax = Math.max(d0 + 30, ...bands.map((b) => b.to), today + 2)
   const lo = Math.min(...points.map((pt) => pt[1]), p.price_paid)
   const ticks = niceTicks(lo * 0.82, p.price_paid * 1.04)
   const yMin = ticks[0]
-  const yMax = Math.max(ticks[ticks.length - 1], p.price_paid * 1.08)
+  const yMax = Math.max(ticks[ticks.length - 1], p.price_paid * 1.1)
 
-  const iw = width - PAD.left - PAD.right
-  const ih = H - PAD.top - PAD.bottom
-  const x = (d: number) => PAD.left + ((d - d0) / (xMax - d0)) * iw
-  const y = (v: number) => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * ih
+  const right = width - PAD.right
+  const bottom = H - PAD.bottom
+  const x = (d: number) => PAD.left + ((d - d0) / (xMax - d0)) * (right - PAD.left)
+  const y = (v: number) => PAD.top + (1 - (v - yMin) / (yMax - yMin)) * (bottom - PAD.top)
 
-  // Step path from purchase to today.
   let line = `M${x(points[0][0])},${y(points[0][1])}`
   points.forEach(([d, v], i) => {
     if (i > 0) line += ` H${x(d)} V${y(v)}`
   })
   line += ` H${x(today)}`
 
-  // Gap between "paid" and the price line, split at the window's end.
-  const windowEnd = pm ? pm.closes_day : d0
-  const gap = (from: number, to: number) => {
-    if (to <= from) return ""
-    let d = `M${x(from)},${y(p.price_paid)}`
-    let cur = priceOn(from)
-    d += ` V${y(cur)}`
-    for (const [day, v] of points) {
-      if (day > from && day < to) {
-        d += ` H${x(day)} V${y(v)}`
-        cur = v
-      }
-    }
-    d += ` H${x(to)} V${y(p.price_paid)} Z`
-    return d
-  }
-  const claimable = gap(d0, Math.min(today, windowEnd))
-  const missed = gap(Math.max(d0, windowEnd), today)
-  const firstDropDay = points.find(([, v]) => v < p.price_paid)?.[0] ?? today
-
-  // Direct label centered in a shaded gap, only if it fits.
-  const gapLabel = (from: number, to: number, text: string, cls: string) => {
-    const w = x(to) - x(from)
-    if (to <= from || w < 58) return null
-    const mid = priceOn(from)
-    const yMid = (y(p.price_paid) + y(mid)) / 2 + 4
-    if (y(mid) - y(p.price_paid) < 14) return null
-    return (
-      <text x={(x(from) + x(to)) / 2} y={yMid} textAnchor="middle" className={`gap-label ${cls}`}>
-        {text}
-      </text>
-    )
+  // "Paid" label sits just above the paid line at the left.
+  const paidText = `Paid ${money(p.price_paid)}`
+  const paidBox: Box = {
+    x0: PAD.left + 2,
+    x1: PAD.left + 2 + paidText.length * CHAR_W,
+    y0: y(p.price_paid) - 15,
+    y1: y(p.price_paid) - 2
   }
 
+  // Current-price label: first spot that fits inside the plot and misses "Paid".
   const nowPrice = priceOn(today)
+  const nowText = `${money(nowPrice)} now`
+  const nowW = nowText.length * CHAR_W
+  const dx = x(today)
+  const dy = y(nowPrice)
+  const spots = [
+    { tx: dx - 8, ty: dy - 8, anchor: "end" as const },
+    { tx: dx + 8, ty: dy - 8, anchor: "start" as const },
+    { tx: dx - 8, ty: dy + 16, anchor: "end" as const },
+    { tx: dx + 8, ty: dy + 16, anchor: "start" as const }
+  ]
+  const nowSpot = spots.find((s) => {
+    const box: Box = {
+      x0: s.anchor === "end" ? s.tx - nowW : s.tx,
+      x1: s.anchor === "end" ? s.tx : s.tx + nowW,
+      y0: s.ty - 11,
+      y1: s.ty + 2
+    }
+    const inside = box.x0 >= PAD.left && box.x1 <= right && box.y0 >= PAD.top && box.y1 <= bottom
+    return inside && !overlaps(box, paidBox)
+  })
+
   const hoverDay = hover === null ? null : Math.min(today, Math.max(d0, hover))
-  const tipLeft = hoverDay === null ? 0 : Math.min(width - 110, Math.max(0, x(hoverDay) - 55))
+  const tipLeft = hoverDay === null ? 0 : Math.min(width - 150, Math.max(0, x(hoverDay) - 75))
 
   const onMove = (e: PointerEvent<SVGRectElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
-    const day = Math.round(d0 + ((e.clientX - rect.left) / rect.width) * (xMax - d0))
-    setHover(day)
+    setHover(Math.round(d0 + ((e.clientX - rect.left) / rect.width) * (xMax - d0)))
   }
 
   const summary =
-    `Price of ${p.item_name} since purchase: paid ${money(p.price_paid)}, ` +
-    `now ${money(nowPrice)}, lowest ${money(tp.lowest_seen)}.`
+    `Price of ${p.item_name} since purchase: paid ${money(p.price_paid)}, now ${money(nowPrice)}. ` +
+    bands.map((b) => `${b.label} ${b.state}.`).join(" ")
 
   return (
     <figure className="price-chart" ref={wrapRef}>
+      {bands.length > 0 && (
+        <figcaption className="chart-legend">
+          {bands.map((b) => (
+            <span key={b.key} className={`legend-item ${b.key}`}>
+              <span className="legend-swatch" aria-hidden="true" />
+              {b.label} <span className="muted">· {b.state}</span>
+            </span>
+          ))}
+        </figcaption>
+      )}
       <svg width={width} height={H} role="img" aria-label={summary}>
-        {/* price-match window */}
-        {pm && (
-          <g>
-            <rect
-              x={x(pm.opens_day)}
-              y={PAD.top}
-              width={x(pm.closes_day) - x(pm.opens_day)}
-              height={ih}
-              className={`window ${pm.status === "closed" ? "closed" : ""}`}
-            />
-            <text x={x(pm.opens_day)} y={PAD.top - 8} className="chart-note">
-              Price-match window
-            </text>
-          </g>
-        )}
+        {bands.map((b) => (
+          <rect
+            key={b.key}
+            x={x(b.from)}
+            y={PAD.top}
+            width={Math.max(0, x(b.to) - x(b.from))}
+            height={bottom - PAD.top}
+            className={`band ${b.key}`}
+          />
+        ))}
 
-        {/* gridlines */}
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={PAD.left} x2={width - PAD.right} y1={y(t)} y2={y(t)} className="grid" />
-            <text x={width - PAD.right + 6} y={y(t) + 4} className="tick">
+            <line x1={PAD.left} x2={right} y1={y(t)} y2={y(t)} className="grid" />
+            <text x={right + 6} y={y(t) + 4} className="tick">
               {money(t)}
             </text>
           </g>
         ))}
 
-        {/* return deadline */}
-        {ret && (
-          <g>
-            <line x1={x(ret.closes_day)} x2={x(ret.closes_day)} y1={PAD.top - 4} y2={H - PAD.bottom} className="deadline" />
-            <text x={x(ret.closes_day) - 4} y={PAD.top - 8} className="chart-note" textAnchor="end">
-              Return ends
-            </text>
-          </g>
-        )}
-
-        {/* claimable / missed gap, labeled in place when there's room */}
-        {claimable && <path d={claimable} className="gap claimable" />}
-        {missed && <path d={missed} className="gap missed" />}
-        {gapLabel(firstDropDay, Math.min(today, windowEnd), "Claimable", "claimable")}
-        {gapLabel(Math.max(firstDropDay, windowEnd), today, "Too late", "missed")}
-
-        {/* what you paid */}
-        <line x1={PAD.left} x2={x(xMax)} y1={y(p.price_paid)} y2={y(p.price_paid)} className="paid" />
-        <text x={PAD.left + 2} y={y(p.price_paid) - 5} className="chart-label">
-          You paid {money(p.price_paid)}
+        <line x1={PAD.left} x2={right} y1={y(p.price_paid)} y2={y(p.price_paid)} className="paid" />
+        <text x={paidBox.x0} y={paidBox.y1 - 2} className="chart-label">
+          {paidText}
         </text>
 
-        {/* price line + today */}
         <path d={line} className="series" />
-        <circle cx={x(today)} cy={y(nowPrice)} r={4.5} className="end-dot" />
-        {nowPrice !== p.price_paid && (
-          <text
-            x={x(today) + (x(today) < PAD.left + 90 ? 8 : -8)}
-            y={y(nowPrice) - 8}
-            textAnchor={x(today) < PAD.left + 90 ? "start" : "end"}
-            className="chart-label strong">
-            {money(nowPrice)} now
+        <circle cx={dx} cy={dy} r={4.5} className="end-dot" />
+        {nowPrice !== p.price_paid && nowSpot && (
+          <text x={nowSpot.tx} y={nowSpot.ty} textAnchor={nowSpot.anchor} className="chart-label strong">
+            {nowText}
           </text>
         )}
 
-        {/* x axis: purchase date and the end of the plotted range */}
         <text x={PAD.left} y={H - 4} className="tick">
           {shortDate(isoDate(baseDate, d0))}
         </text>
-        <text x={x(xMax)} y={H - 4} className="tick" textAnchor="end">
+        <text x={right} y={H - 4} className="tick" textAnchor="end">
           {shortDate(isoDate(baseDate, xMax))}
         </text>
 
-        {/* hover */}
         {hoverDay !== null && (
-          <line x1={x(hoverDay)} x2={x(hoverDay)} y1={PAD.top} y2={H - PAD.bottom} className="crosshair" />
+          <line x1={x(hoverDay)} x2={x(hoverDay)} y1={PAD.top} y2={bottom} className="crosshair" />
         )}
         <rect
           x={PAD.left}
           y={0}
-          width={iw}
+          width={right - PAD.left}
           height={H}
           fill="transparent"
           onPointerMove={onMove}
@@ -229,6 +257,7 @@ export default function PriceChart({ tp, today, baseDate }: Props) {
         <div className="chart-tip" style={{ left: tipLeft }}>
           <strong>{money(priceOn(hoverDay))}</strong>
           <span>{shortDate(isoDate(baseDate, hoverDay))}</span>
+          <span>{optionOn(hoverDay)}</span>
         </div>
       )}
     </figure>

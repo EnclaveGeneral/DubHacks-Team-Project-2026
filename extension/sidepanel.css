@@ -9,15 +9,14 @@
   --grid: #ecebe6;
   --axis: #c3c2b7;
   --series: #2a78d6;
-  --window: rgba(42, 120, 214, 0.07);
-  --window-closed: rgba(120, 120, 115, 0.07);
   --good: #0f7a3d;
   --good-wash: rgba(12, 163, 12, 0.14);
   --good-bg: #eef8f1;
   --warn: #b45309;
   --warn-bg: #fff6e8;
   --info-bg: #f3f4f3;
-  --missed-wash: rgba(120, 120, 115, 0.16);
+  --band-adjust: #1baf7a;
+  --band-rebuy: #6250d6;
   --accent: #1a1f71;
   --focus: #2a78d6;
 }
@@ -34,15 +33,14 @@
     --grid: #2a2b29;
     --axis: #45463f;
     --series: #3987e5;
-    --window: rgba(57, 135, 229, 0.12);
-    --window-closed: rgba(160, 160, 150, 0.08);
     --good: #4cc36a;
     --good-wash: rgba(12, 163, 12, 0.22);
     --good-bg: #1b2a1f;
     --warn: #f0a24a;
     --warn-bg: #2d2418;
     --info-bg: #242523;
-    --missed-wash: rgba(160, 160, 150, 0.18);
+    --band-adjust: #199e70;
+    --band-rebuy: #9085e9;
     --accent: #9fa6ff;
   }
 }
@@ -58,15 +56,14 @@
   --grid: #2a2b29;
   --axis: #45463f;
   --series: #3987e5;
-  --window: rgba(57, 135, 229, 0.12);
-  --window-closed: rgba(160, 160, 150, 0.08);
   --good: #4cc36a;
   --good-wash: rgba(12, 163, 12, 0.22);
   --good-bg: #1b2a1f;
   --warn: #f0a24a;
   --warn-bg: #2d2418;
   --info-bg: #242523;
-  --missed-wash: rgba(160, 160, 150, 0.18);
+  --band-adjust: #199e70;
+  --band-rebuy: #9085e9;
   --accent: #9fa6ff;
 }
 
@@ -488,12 +485,45 @@ button.primary:disabled {
   overflow: visible;
 }
 
-.price-chart .window {
-  fill: var(--window);
+.price-chart .band.adjust {
+  fill: var(--band-adjust);
+  fill-opacity: 0.12;
 }
 
-.price-chart .window.closed {
-  fill: var(--window-closed);
+.price-chart .band.rebuy {
+  fill: var(--band-rebuy);
+  fill-opacity: 0.1;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.legend-item.adjust .legend-swatch {
+  background: var(--band-adjust);
+  opacity: 0.55;
+}
+
+.legend-item.rebuy .legend-swatch {
+  background: var(--band-rebuy);
+  opacity: 0.5;
 }
 
 .price-chart .grid {
@@ -517,14 +547,6 @@ button.primary:disabled {
   stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
-}
-
-.price-chart .gap.claimable {
-  fill: var(--good-wash);
-}
-
-.price-chart .gap.missed {
-  fill: var(--missed-wash);
 }
 
 .price-chart .end-dot {
@@ -554,19 +576,6 @@ button.primary:disabled {
   fill: var(--ink);
 }
 
-.price-chart .gap-label {
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.price-chart .gap-label.claimable {
-  fill: var(--ink-2);
-}
-
-.price-chart .gap-label.missed {
-  fill: var(--muted);
-}
-
 .price-chart .crosshair {
   stroke: var(--ink-2);
   stroke-width: 1;
@@ -575,7 +584,7 @@ button.primary:disabled {
 .chart-tip {
   position: absolute;
   top: 0;
-  width: 110px;
+  width: 150px;
   padding: 5px 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -834,4 +843,19 @@ button.primary:disabled {
   resize: vertical;
   font-size: 12px;
   line-height: 1.45;
+}
+
+.steps {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  color: var(--ink-2);
+}
+
+.steps li {
+  margin: 2px 0;
+}
+
+.result {
+  margin: 6px 0 0;
+  font-weight: 600;
 }

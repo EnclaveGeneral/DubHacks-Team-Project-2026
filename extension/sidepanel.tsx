@@ -42,8 +42,8 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`
 
 const PRIORITY: Record<Alert["kind"], number> = {
   price_drop_claimable: 0,
-  window_closing: 1,
-  price_drop_declined: 2,
+  return_rebuy: 1,
+  window_closing: 2,
   card_protection: 3
 }
 
@@ -588,6 +588,19 @@ function ReportLowerPrice({ tp }: { tp: TrackedPurchase }) {
 
 // ---------- Alerts ----------
 
+function pointsPhrase(lost: number): string {
+  if (lost > 0) return `after ${lost} points are taken back`
+  if (lost < 0) return `and earn about ${-lost} more points`
+  return ""
+}
+
+function currentPrice(tp: TrackedPurchase, day: number): number {
+  const seen = Object.keys(tp.price_history)
+    .map(Number)
+    .filter((d) => d <= day)
+  return seen.length ? tp.price_history[String(Math.max(...seen))] : tp.purchase.price_paid
+}
+
 function AlertCard({
   alert,
   tp,
@@ -606,7 +619,6 @@ function AlertCard({
   const [message, setMessage] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const m = alert.money
-  const primaryCite = alert.citations[0]
   const pm = tp.timeline.find((w) => w.label === "Price match")
 
   const prepare = async () => {
@@ -633,31 +645,48 @@ function AlertCard({
     }
   }
 
-  let detail: string
+  const ret = tp.timeline.find((w) => w.label === "Return")
+  const returnLeft = ret ? Math.max(0, ret.closes_day - clock.day) : null
+  const pending = alert.body.includes("pending")
+
+  let detail: string | null = null
+  let steps: string[] = []
+  let result: string | null = null
   if (alert.kind === "price_drop_claimable") {
     const left = pm ? Math.max(0, pm.closes_day - clock.day) : null
     detail =
       (left !== null ? `${plural(left, "day")} left to claim. ` : "") +
-      (m && m.points_reversed
-        ? `About ${usd(m.net_estimate)} back after ${m.points_reversed} points are taken back (estimate).`
-        : "")
-  } else if (alert.kind === "window_closing") {
-    detail = m
-      ? `Returning refunds ${usd(m.refund)}` +
-        (m.points_reversed ? ` and takes back about ${m.points_reversed} points (estimate)` : "") +
-        "." +
-        (tp.claims_filed.length ? " This doesn't count your pending price adjustment." : "")
-      : ""
-  } else {
-    const n = typeof primaryCite?.value === "number" ? primaryCite.value : null
-    detail = n
-      ? `The ${n}-day price-match window has closed, so there's no claim to file.`
-      : "This store's policy doesn't offer price adjustments."
+      (m ? `About ${usd(m.net_estimate)} back ${pointsPhrase(m.points_reversed)} (estimate).` : "")
+  } else if (alert.kind === "return_rebuy" && m) {
+    // First sentence of the engine's explanation: why no price adjustment.
+    detail = alert.body.split(/(?<=\.)\s/)[0]
+    const current = currentPrice(tp, clock.day)
+    steps = [
+      `Buy it again at ${usd(current)}.`,
+      `Return the original for a ${usd(current + m.refund)} refund` +
+        (returnLeft !== null ? (returnLeft === 0 ? " by today." : ` within ${plural(returnLeft, "day")}.`) : ".")
+    ]
+    result = `You come out about ${usd(m.net_estimate)} ahead ${pointsPhrase(m.points_reversed)} (estimate).`
+  } else if (alert.kind === "window_closing" && m) {
+    detail =
+      `Returning refunds ${usd(m.refund)}` +
+      (m.points_reversed ? ` and takes back about ${m.points_reversed} points (estimate)` : "") +
+      "."
   }
 
-  const tone =
-    alert.kind === "price_drop_claimable" ? "good" : alert.kind === "window_closing" ? "warn" : "info"
-  const iconChar = tone === "good" ? "↓" : tone === "warn" ? "!" : "i"
+  const action =
+    alert.action === "prepare_claim"
+      ? tp.purchase.claim_form_url
+        ? "Prepare claim form"
+        : "Draft a request message"
+      : alert.action === "prepare_return"
+        ? tp.purchase.claim_form_url
+          ? "Prepare return form"
+          : "Draft a return message"
+        : null
+
+  const tone = alert.kind === "window_closing" ? "warn" : "good"
+  const iconChar = alert.kind === "return_rebuy" ? "↺" : tone === "warn" ? "!" : "↓"
 
   return (
     <div className={`alert ${tone} ${compact ? "compact" : ""}`}>
@@ -675,17 +704,35 @@ function AlertCard({
       {open && (
         <div className="alert-body">
           {detail && <p className="detail">{detail}</p>}
+          {steps.length > 0 && (
+            <ol className="steps">
+              {steps.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ol>
+          )}
+          {result && <p className="result">{result}</p>}
+          {(alert.kind === "return_rebuy" || (pending && alert.kind === "window_closing")) && (
+            <p className="small muted">
+              {[
+                pending && "Assumes your pending price adjustment is approved.",
+                alert.kind === "return_rebuy" && "Check that the new order isn't marked Final Sale."
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            </p>
+          )}
           {(showAll ? alert.citations : alert.citations.slice(0, 1)).map((c, i) => (
             <Quote key={i} c={c} policyUrl={tp.policy.source_url} />
           ))}
           {!showAll && alert.citations.length > 1 && (
             <button className="link small" onClick={() => setShowAll(true)}>
-              Show the card term behind the points
+              Show {alert.citations.length - 1} more source{alert.citations.length > 2 ? "s" : ""}
             </button>
           )}
-          {alert.action === "prepare_claim" && !message && (
+          {action && !message && (
             <button className="primary" onClick={prepare} disabled={busy}>
-              {busy ? "Preparing…" : tp.purchase.claim_form_url ? "Prepare claim form" : "Draft a request message"}
+              {busy ? "Preparing…" : action}
             </button>
           )}
           {message && (
@@ -771,7 +818,7 @@ function deadlineRow(w: TimelineWindow, clock: ClockState) {
   if (label === "Card return protection") label = "Return protection from your card"
 
   let when: string
-  if (w.status === "claimed") when = "Claim filed ✓"
+  if (w.status === "claimed") when = label === "Return" ? "Return requested ✓" : "Claim filed ✓"
   else if (w.status === "closed") when = "Closed"
   else if (w.long_term) when = `Until ${end}`
   else when = left === 0 ? "Closes today" : `${plural(left, "day")} left`

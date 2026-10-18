@@ -149,21 +149,47 @@ def main(headed: bool) -> int:
         check(tp["claims_filed"] == ["price_match"], "Service marked the claim filed")
         check("price_drop_claimable" not in alerts_by_kind(), "Claim offer disappears once filed")
 
-        # ---------- Day 20: declined ----------
+        # ---------- Day 20: adjustment used, price lower again -> return & rebuy ----------
         httpx.post(f"{SERVICE}/clock", json={"day": 20}, timeout=10)
-        a = alerts_by_kind().get("price_drop_declined")
-        check(a is not None and a["action"] is None and "Clause 4.2" in a["body"],
-              f"Day 20 declined: {a and a['body']}")
-        snap("no claim is available", "day20")
+        found = alerts_by_kind()
+        a = found.get("return_rebuy")
+        check(
+            a is not None and a["action"] == "prepare_return"
+            and a["title"] == "Save $15 by returning and rebuying"
+            and "$110 refund" in a["body"] and "pending $30" in a["body"],
+            f"Day 20 return & rebuy: {a and a['title']} | {a and a['body']}",
+        )
+        check("price_drop_declined" not in found, "No dead-end 'no claim' alert")
+        snap("Save $15 by returning and rebuying", "day20")
 
-        # ---------- Day 28: return warning ----------
+        # ---------- Day 28: same option, deadline close; no duplicate warning ----------
         httpx.post(f"{SERVICE}/clock", json={"day": 28}, timeout=10)
-        a = alerts_by_kind().get("window_closing")
-        check(a is not None and a["title"] == "Return window closes in 2 days"
-              and a["money"]["points_reversed"] == 420 and "pending" in a["body"],
-              f"Day 28 warning: {a and a['body']}")
+        found = alerts_by_kind()
+        a = found.get("return_rebuy")
+        check(a is not None and "2 days left" in a["body"] and "window_closing" not in found,
+              f"Day 28 rebuy carries the deadline: {a and a['body']}")
+        snap("Save $15 by returning and rebuying", "day28")
 
-        snap("Return window closes in 2 days", "day28")
+        # ---------- Prepare the return form; shopper submits ----------
+        clock = httpx.get(f"{SERVICE}/clock").json()
+        tp = httpx.get(f"{SERVICE}/purchases").json()[0]
+        store.bring_to_front()
+        result = panel.evaluate(
+            "([tp, a, c]) => window.__backpocket.prepareClaim(tp, a, c)", [tp, a, clock]
+        )
+        check(not result["failed"] and store.locator("#claim_type").input_value() == "return",
+              f"Return form filled: {result}")
+        store.fill("#email", "shopper@example.com")
+        store.get_by_role("button", name="Submit request").click()
+        store.get_by_text("Confirmation number").wait_for(timeout=5000)
+        claim = httpx.get(f"{STORE_SERVER}/claims").json()[-1]
+        check(claim["claim_type"] == "return" and "Clause 3.1" in claim["explanation"],
+              f"Store received the return request: {claim['explanation'][:90]}")
+        store.wait_for_timeout(500)
+        tp = httpx.get(f"{SERVICE}/purchases").json()[0]
+        returns = [w["status"] for w in tp["timeline"] if w["label"] == "Return"]
+        check("return" in tp["claims_filed"] and returns == ["claimed"], "Return marked requested")
+        check(not [k for k in alerts_by_kind() if k != "card_protection"], "No offers left after the return")
         ctx.close()
 
     print(f"\n{'ALL PASSED' if not failures else f'{len(failures)} FAILED'}")
