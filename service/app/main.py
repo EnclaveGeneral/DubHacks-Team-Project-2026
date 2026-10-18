@@ -74,7 +74,10 @@ DEMO_CARD = "northwind-4417"
 
 @app.post("/demo/reset", response_model=ClockState)
 def demo_reset():
-    db.reset()
+    # Under the purchase lock so an in-flight panel poll can't save a purchase
+    # back after the wipe.
+    with tracking.lock:
+        db.reset()
     try:
         httpx.post(f"{clock.store_server_url()}/admin/reset", timeout=2)
     except httpx.HTTPError:

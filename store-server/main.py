@@ -19,9 +19,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# (first_day, price) pairs, sorted by day. IMPLEMENTATION.md section 2.
+# (first_day, price) pairs, sorted by day. Only the demo jacket changes price
+# (IMPLEMENTATION.md section 2); the rest of the catalog stays flat.
 PRICE_SCHEDULE: dict[str, list[tuple[int, float]]] = {
     "RJ-140": [(0, 140.00), (3, 110.00), (20, 95.00)],
+    "BF-078": [(0, 78.00)],
+    "SP-085": [(0, 85.00)],
+    "CV-120": [(0, 120.00)],
+    "TM-065": [(0, 65.00)],
+    "AB-032": [(0, 32.00)],
+    "DS-095": [(0, 95.00)],
+    "LP-058": [(0, 58.00)],
 }
 
 state = {"day": 0, "claims": []}
@@ -37,6 +45,12 @@ def price_on(sku: str, day: int) -> float:
 @app.get("/price/{sku}")
 def get_price(sku: str):
     return {"sku": sku, "day": state["day"], "price": price_on(sku, state["day"])}
+
+
+@app.get("/prices")
+def get_prices():
+    day = state["day"]
+    return {"day": day, "prices": {sku: price_on(sku, day) for sku in PRICE_SCHEDULE}}
 
 
 class Claim(BaseModel):

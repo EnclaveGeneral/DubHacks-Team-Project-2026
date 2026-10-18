@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 
+import PriceChart from "~components/PriceChart"
 import {
   getAlerts,
   getCards,
@@ -23,23 +24,36 @@ import type {
 
 import "./sidepanel.css"
 
-const fmtDate = (iso: string) =>
+// Layout, top to bottom: the one thing to act on, the price chart, then
+// deadlines. Everything else (card terms, full clauses) is one click away.
+
+const fmtDate = (iso: string, withYear = false) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
+    ...(withYear ? { year: "numeric" } : {}),
     timeZone: "UTC"
   })
 
 const usd = (n: number) => `$${n.toFixed(2)}`
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`
+
+const PRIORITY: Record<Alert["kind"], number> = {
+  price_drop_claimable: 0,
+  window_closing: 1,
+  price_drop_declined: 2,
+  card_protection: 3
+}
 
 function SidePanel() {
   const [clock, setClock] = useState<ClockState | null>(null)
   const [cards, setCards] = useState<CardCatalogEntry[]>([])
   const [card, setCard] = useState<SelectedCard | null>(null)
+  const [cardLoaded, setCardLoaded] = useState(false)
   const [purchases, setPurchases] = useState<TrackedPurchase[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [showCard, setShowCard] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
@@ -53,6 +67,7 @@ function SidePanel() {
       setPurchases(p)
       setAlerts(a)
       setCard(sc)
+      setCardLoaded(true)
       setError(null)
     } catch (e) {
       setError((e as Error).message)
@@ -71,62 +86,77 @@ function SidePanel() {
     refresh()
   }
 
+  const needsCard = cardLoaded && !card
+
   return (
     <div className="panel">
       <header className="top">
-        <h1>BackPocket</h1>
-        {clock && (
-          <span className="muted">
-            Day {clock.day} · {fmtDate(isoDate(clock.base_date, clock.day))}
-          </span>
+        <div className="brand">
+          <span className="mark" aria-hidden="true" />
+          BackPocket
+        </div>
+        {card && (
+          <button className="card-chip" onClick={() => setShowCard((s) => !s)} aria-expanded={showCard}>
+            <span className="visa">VISA</span> ···· {card.last4}
+          </button>
         )}
       </header>
-      {error && <p className="error">{error}</p>}
 
-      <CardSection cards={cards} card={card} onChange={setCard} />
+      {error && <p className="banner error">{error}</p>}
 
-      <section>
-        <h2>Alerts</h2>
-        {alerts.length === 0 && <p className="muted">Nothing needs your attention.</p>}
-        {alerts.map((a) => (
-          <AlertCard
-            key={a.id}
-            alert={a}
-            purchase={purchases.find((p) => p.purchase.order_id === a.purchase_id)}
+      {(needsCard || showCard) && (
+        <CardSheet
+          cards={cards}
+          card={card}
+          onPicked={(c) => {
+            setCard(c)
+            setShowCard(false)
+          }}
+        />
+      )}
+
+      {!needsCard && purchases.length === 0 && !error && (
+        <div className="empty">
+          <strong>No purchases yet</strong>
+          <p>After you buy something, turn on “Protect this purchase” on the order confirmation page.</p>
+        </div>
+      )}
+
+      {clock &&
+        [...purchases].reverse().map((tp) => (
+          <PurchaseView
+            key={tp.purchase.order_id}
+            tp={tp}
             clock={clock}
+            alerts={alerts
+              .filter((a) => a.purchase_id === tp.purchase.order_id && a.kind !== "card_protection")
+              .sort((a, b) => PRIORITY[a.kind] - PRIORITY[b.kind])}
           />
         ))}
-      </section>
 
-      <section>
-        <h2>Purchases</h2>
-        {purchases.length === 0 && (
-          <p className="muted">
-            No protected purchases yet. Turn on “Protect this purchase” on an order
-            confirmation page.
-          </p>
-        )}
-        {purchases.map((p) => (
-          <PurchaseCard key={p.purchase.order_id} tp={p} clock={clock} />
-        ))}
-      </section>
-
-      <footer>
-        <span className="muted">Skip to day</span>
-        {[0, 3, 20, 28].map((d) => (
-          <button key={d} className={clock?.day === d ? "on" : ""} onClick={() => jump(d)}>
-            {d}
+      <footer className="demo-bar" aria-label="Demo clock">
+        <span className="demo-label">
+          Demo day {clock?.day ?? "–"}
+          {clock && <span className="muted"> · {fmtDate(isoDate(clock.base_date, clock.day))}</span>}
+        </span>
+        <div className="demo-buttons">
+          {[0, 3, 20, 28].map((d) => (
+            <button key={d} className={clock?.day === d ? "on" : ""} onClick={() => jump(d)}>
+              {d}
+            </button>
+          ))}
+          <button onClick={() => clock && jump(clock.day + 1)} aria-label="Next day">
+            +1
           </button>
-        ))}
-        <button onClick={() => clock && jump(clock.day + 1)}>+1</button>
-        <button
-          className="reset"
-          onClick={async () => {
-            setClock(await resetDemo())
-            refresh()
-          }}>
-          Reset
-        </button>
+          <button
+            className="reset"
+            onClick={async () => {
+              setClock(await resetDemo())
+              refresh()
+            }}>
+            Reset
+          </button>
+        </div>
       </footer>
     </div>
   )
@@ -134,16 +164,15 @@ function SidePanel() {
 
 // ---------- Card ----------
 
-function CardSection({
+function CardSheet({
   cards,
   card,
-  onChange
+  onPicked
 }: {
   cards: CardCatalogEntry[]
   card: SelectedCard | null
-  onChange: (c: SelectedCard) => void
+  onPicked: (c: SelectedCard) => void
 }) {
-  const [picking, setPicking] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
@@ -151,8 +180,7 @@ function CardSection({
     setBusy(id)
     setErr(null)
     try {
-      onChange(await selectCard(id))
-      setPicking(false)
+      onPicked(await selectCard(id))
     } catch (e) {
       setErr((e as Error).message)
     } finally {
@@ -160,192 +188,292 @@ function CardSection({
     }
   }
 
-  if (card && !picking) {
-    const b = card.benefits
-    const product = cards.find((c) => c.card_id === card.card_id)?.product_name
-    return (
-      <section>
-        <h2>Your card</h2>
-        <div className="card-chip">
-          <div>
-            <strong>{b.display_name}</strong>
-            {product && <span className="muted"> · {product}</span>}
-            <div className="muted small">
-              {b.earn_rate_points_per_dollar.value} pts per $1 · points reversed on refunds:{" "}
-              {b.reversal_rule.value}
-              {b.reversal_rule.confidence === "low" && <Confirm />}
-            </div>
-          </div>
-          <button className="link" onClick={() => setPicking(true)}>
-            Change
-          </button>
-        </div>
-        <details>
-          <summary className="small">What BackPocket read from the benefits guide</summary>
-          <pre className="json">{JSON.stringify(b, null, 2)}</pre>
-        </details>
-      </section>
-    )
-  }
-
+  const b = card?.benefits
   return (
-    <section>
-      <h2>Pick your card</h2>
-      <p className="muted small">
-        BackPocket reads the card's public benefits guide. No card number or login needed.
-      </p>
-      {cards.map((c) => (
-        <button key={c.card_id} className="card-option" disabled={!!busy} onClick={() => pick(c.card_id)}>
-          <strong>{c.display_name}</strong> <span className="muted">{c.product_name}</span>
-          {busy === c.card_id && <span className="muted"> · reading benefits guide…</span>}
-        </button>
-      ))}
-      {err && <p className="error">{err}</p>}
+    <section className="sheet">
+      {b ? (
+        <>
+          <h2>{cards.find((c) => c.card_id === card.card_id)?.product_name ?? b.display_name}</h2>
+          <dl className="terms">
+            <div className="term-row">
+              <dt>Earns</dt>
+              <dd>
+                {b.earn_rate_points_per_dollar.value} pts per $1
+                <LowConfidence c={b.earn_rate_points_per_dollar} />
+              </dd>
+            </div>
+            <div className="term-row">
+              <dt>On refunds</dt>
+              <dd>
+                {b.reversal_rule.value === "proportional"
+                  ? "Points on the refunded amount are taken back"
+                  : b.reversal_rule.value === "none"
+                    ? "You keep your points"
+                    : b.reversal_rule.value === "threshold"
+                      ? `Points taken back on refunds over $${b.reversal_threshold_dollars.value}`
+                      : "All points on the purchase are taken back"}
+                <LowConfidence c={b.reversal_rule} />
+              </dd>
+            </div>
+            {b.protections.map((p) => (
+              <div key={p.type} className="term-row">
+                <dt>{p.type === "extended_warranty" ? "Warranty" : "Returns"}</dt>
+                <dd>
+                  {p.type === "extended_warranty"
+                    ? `May add ${p.extends_months.value} months to the maker's warranty`
+                    : `May refund returns a store refuses, within ${p.window_days.value} days`}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <details>
+            <summary>Everything BackPocket read from the benefits guide</summary>
+            <pre className="json">{JSON.stringify(b, null, 2)}</pre>
+          </details>
+          <p className="small muted">Switch card</p>
+        </>
+      ) : (
+        <>
+          <h2>Which card do you use?</h2>
+          <p className="small muted">
+            BackPocket reads the card's public benefits guide. No card number or login.
+          </p>
+        </>
+      )}
+      <div className="card-options">
+        {cards
+          .filter((c) => c.card_id !== card?.card_id)
+          .map((c) => (
+            <button key={c.card_id} className="card-option" disabled={!!busy} onClick={() => pick(c.card_id)}>
+              <span className="visa">VISA</span>
+              <span>
+                <strong>···· {c.last4}</strong> <span className="muted">{c.product_name}</span>
+              </span>
+              {busy === c.card_id && <span className="muted small">Reading guide…</span>}
+            </button>
+          ))}
+      </div>
+      {err && <p className="error small">{err}</p>}
     </section>
+  )
+}
+
+// ---------- Purchase ----------
+
+function PurchaseView({ tp, clock, alerts }: { tp: TrackedPurchase; clock: ClockState; alerts: Alert[] }) {
+  const p = tp.purchase
+  const [primary, ...rest] = alerts
+  return (
+    <article className="purchase">
+      <header className="purchase-head">
+        <div>
+          <h1>{p.item_name}</h1>
+          <p className="muted small">
+            {p.merchant} · paid {usd(p.price_paid)} on {fmtDate(isoDate(clock.base_date, p.purchase_day))}
+          </p>
+        </div>
+      </header>
+
+      {primary ? (
+        <AlertCard alert={primary} tp={tp} clock={clock} />
+      ) : (
+        <p className="all-clear">
+          <span className="ok-dot" aria-hidden="true" /> Nothing to do. BackPocket is watching the price and your
+          deadlines.
+        </p>
+      )}
+      {rest.map((a) => (
+        <AlertCard key={a.id} alert={a} tp={tp} clock={clock} compact />
+      ))}
+
+      <section className="block">
+        <h2>Price since you bought it</h2>
+        <PriceChart tp={tp} today={clock.day} baseDate={clock.base_date} />
+      </section>
+
+      <section className="block">
+        <h2>Deadlines</h2>
+        <Deadlines tp={tp} clock={clock} />
+      </section>
+    </article>
   )
 }
 
 // ---------- Alerts ----------
 
-function Quote({ c, policyUrl }: { c: Cited<unknown>; policyUrl?: string }) {
-  if (!c.quote) return null
-  const isCard = c.clause?.startsWith("§")
-  const href = !isCard && policyUrl && c.clause ? `${policyUrl}#clause-${c.clause}` : undefined
-  return (
-    <blockquote>
-      “{c.quote}”{" "}
-      <span className="muted small">
-        {isCard ? "Card benefits guide" : "Store policy"} {c.clause}
-        {href && (
-          <>
-            {" · "}
-            <a href={href} target="_blank" rel="noreferrer">
-              read in full
-            </a>
-          </>
-        )}
-      </span>
-      {c.confidence === "low" && <Confirm />}
-    </blockquote>
-  )
-}
-
-function Confirm() {
-  return <span className="confirm">Please confirm: BackPocket isn't sure it read this correctly</span>
-}
-
 function AlertCard({
   alert,
-  purchase,
-  clock
+  tp,
+  clock,
+  compact = false
 }: {
   alert: Alert
-  purchase?: TrackedPurchase
-  clock: ClockState | null
+  tp: TrackedPurchase
+  clock: ClockState
+  compact?: boolean
 }) {
-  const [state, setState] = useState<string | null>(null)
+  const [open, setOpen] = useState(!compact)
+  const [state, setState] = useState<{ text: string; ok: boolean } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [showAll, setShowAll] = useState(false)
+  const m = alert.money
+  const primaryCite = alert.citations[0]
+  const pm = tp.timeline.find((w) => w.label === "Price match")
 
   const prepare = async () => {
-    if (!purchase || !clock) return
-    setState("Opening the store's form…")
+    setBusy(true)
+    setState({ text: "Opening the store's form…", ok: true })
     try {
-      const r = await prepareClaim(purchase, alert, clock)
-      const missing = r.failed.length + r.unfilled.length
-      setState(
-        `Filled ${r.filled.length} fields (highlighted).` +
-          (missing ? ` ${missing} left for you.` : "") +
-          " Review, edit if needed, and submit it yourself."
-      )
+      const r = await prepareClaim(tp, alert, clock)
+      const left = r.failed.length + r.unfilled.length
+      setState({
+        text:
+          `Filled ${plural(r.filled.length, "field")} on the store's form` +
+          (left ? `, ${left} left for you` : "") +
+          ". Check the highlighted fields, then submit it yourself.",
+        ok: true
+      })
     } catch (e) {
-      setState(`Couldn't prepare the form: ${(e as Error).message}`)
+      setState({ text: `Couldn't prepare the form: ${(e as Error).message}`, ok: false })
+    } finally {
+      setBusy(false)
     }
   }
 
-  const m = alert.money
-  return (
-    <div className={`alert ${alert.kind}`}>
-      <strong>{alert.title}</strong>
-      <p>{alert.body}</p>
-      {m && (
-        <p className="money small">
-          Refund {usd(m.refund)}
-          {m.points_reversed > 0 && <> · −{m.points_reversed} pts</>} · net ≈ {usd(m.net_estimate)}
-          {m.is_estimate && <span className="muted"> (estimate)</span>}
-        </p>
-      )}
-      {alert.citations.map((c, i) => (
-        <Quote key={i} c={c} policyUrl={purchase?.policy.source_url} />
-      ))}
-      {alert.action === "prepare_claim" && (
-        <button className="primary" onClick={prepare}>
-          Prepare claim
-        </button>
-      )}
-      {state && <p className="small muted">{state}</p>}
-    </div>
-  )
-}
+  let detail: string
+  if (alert.kind === "price_drop_claimable") {
+    const left = pm ? Math.max(0, pm.closes_day - clock.day) : null
+    detail =
+      (left !== null ? `${plural(left, "day")} left to claim. ` : "") +
+      (m && m.points_reversed
+        ? `About ${usd(m.net_estimate)} back after ${m.points_reversed} points are taken back (estimate).`
+        : "")
+  } else if (alert.kind === "window_closing") {
+    detail = m
+      ? `Returning refunds ${usd(m.refund)}` +
+        (m.points_reversed ? ` and takes back about ${m.points_reversed} points (estimate)` : "") +
+        "." +
+        (tp.claims_filed.length ? " This doesn't count your pending price adjustment." : "")
+      : ""
+  } else {
+    const n = typeof primaryCite?.value === "number" ? primaryCite.value : null
+    detail = n
+      ? `The ${n}-day price-match window has closed, so there's no claim to file.`
+      : "This store's policy doesn't offer price adjustments."
+  }
 
-// ---------- Purchases + timeline ----------
-
-function PurchaseCard({ tp, clock }: { tp: TrackedPurchase; clock: ClockState | null }) {
-  const p = tp.purchase
-  const short = tp.timeline.filter((w) => !w.long_term)
-  const long = tp.timeline.filter((w) => w.long_term)
-  const day = clock?.day ?? 0
-  const span = Math.max(30, ...short.map((w) => w.closes_day - p.purchase_day))
-  const pct = (d: number) => `${Math.min(100, Math.max(0, ((d - p.purchase_day) / span) * 100))}%`
+  const tone =
+    alert.kind === "price_drop_claimable" ? "good" : alert.kind === "window_closing" ? "warn" : "info"
+  const iconChar = tone === "good" ? "↓" : tone === "warn" ? "!" : "i"
 
   return (
-    <div className="purchase">
-      <div className="purchase-head">
-        <strong>{p.item_name}</strong>
-        <span>{usd(p.price_paid)}</span>
-      </div>
-      <div className="muted small">
-        {p.merchant} · order {p.order_id} · Visa ending {p.card_last4}
-        {tp.lowest_seen < p.price_paid && <> · lowest seen {usd(tp.lowest_seen)}</>}
-      </div>
-
-      <div className="timeline">
-        {short.map((w) => (
-          <div key={w.label} className="row">
-            <span className="row-label small">{w.label}</span>
-            <div className="track">
-              <div
-                className={`bar ${w.source} ${w.status}`}
-                style={{ left: pct(w.opens_day), width: `calc(${pct(w.closes_day)} - ${pct(w.opens_day)})` }}
-                title={w.citation.quote ?? ""}
-              />
-              <div className="today" style={{ left: pct(day) }} />
-            </div>
-            <span className="row-status small">
-              {statusText(w, day)}
-              {w.citation.confidence === "low" && <Confirm />}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {long.length > 0 && clock && (
-        <ul className="long-term small">
-          {long.map((w) => (
-            <li key={w.label} className={w.source}>
-              {w.label}: {fmtDate(isoDate(clock.base_date, w.opens_day))} –{" "}
-              {fmtDate(isoDate(clock.base_date, w.closes_day))}
-            </li>
+    <div className={`alert ${tone} ${compact ? "compact" : ""}`}>
+      <button
+        className="alert-head"
+        onClick={() => compact && setOpen((o) => !o)}
+        aria-expanded={compact ? open : undefined}
+        tabIndex={compact ? 0 : -1}>
+        <span className={`alert-icon ${tone}`} aria-hidden="true">
+          {iconChar}
+        </span>
+        <span className="alert-title">{alert.title}</span>
+        {compact && <span className="chev" aria-hidden="true">{open ? "▴" : "▾"}</span>}
+      </button>
+      {open && (
+        <div className="alert-body">
+          {detail && <p className="detail">{detail}</p>}
+          {(showAll ? alert.citations : alert.citations.slice(0, 1)).map((c, i) => (
+            <Quote key={i} c={c} policyUrl={tp.policy.source_url} />
           ))}
-        </ul>
+          {!showAll && alert.citations.length > 1 && (
+            <button className="link small" onClick={() => setShowAll(true)}>
+              Show the card term behind the points
+            </button>
+          )}
+          {alert.action === "prepare_claim" && (
+            <button className="primary" onClick={prepare} disabled={busy}>
+              {busy ? "Preparing…" : "Prepare claim form"}
+            </button>
+          )}
+          {state && <p className={`small ${state.ok ? "muted" : "error"}`}>{state.text}</p>}
+        </div>
       )}
     </div>
   )
 }
 
-function statusText(w: TimelineWindow, day: number): string {
-  if (w.status === "claimed") return "Claim filed"
-  if (w.status === "closed") return "Closed"
-  const left = w.closes_day - day
-  return left === 0 ? "Closes today" : `${left} day${left === 1 ? "" : "s"} left`
+function Quote({ c, policyUrl }: { c: Cited<unknown>; policyUrl?: string }) {
+  const [full, setFull] = useState(false)
+  if (!c.quote) return null
+  const isCard = c.clause?.startsWith("§")
+  const source = isCard ? "Card benefits guide" : "Store policy"
+  const href = !isCard && policyUrl && c.clause ? `${policyUrl}#clause-${c.clause}` : undefined
+  return (
+    <figure className="quote">
+      <figcaption>
+        {source} {c.clause}
+        {href && (
+          <a href={href} target="_blank" rel="noreferrer">
+            Open
+          </a>
+        )}
+      </figcaption>
+      <blockquote className={full ? "" : "clamp"} onClick={() => setFull((f) => !f)} title={full ? "" : "Show full clause"}>
+        “{c.quote}”
+      </blockquote>
+      <LowConfidence c={c} />
+    </figure>
+  )
+}
+
+function LowConfidence({ c }: { c: Cited<unknown> }) {
+  if (c.confidence !== "low") return null
+  return <span className="confirm">Please double-check this</span>
+}
+
+// ---------- Deadlines ----------
+
+function Deadlines({ tp, clock }: { tp: TrackedPurchase; clock: ClockState }) {
+  const rows = tp.timeline.map((w) => deadlineRow(w, clock))
+  return (
+    <ul className="deadlines">
+      {rows.map((r) => (
+        <li key={r.key} className={r.dim ? "dim" : ""}>
+          <span className={`dot ${r.source}`} aria-hidden="true" />
+          <span className="dl-label">
+            {r.label}
+            {r.sub && <span className="dl-sub">{r.sub}</span>}
+          </span>
+          <span className={`dl-when ${r.urgent ? "urgent" : ""}`}>{r.when}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function deadlineRow(w: TimelineWindow, clock: ClockState) {
+  const left = w.closes_day - clock.day
+  const end = fmtDate(isoDate(clock.base_date, w.closes_day), w.long_term)
+  const isCard = w.source === "card"
+  let label = w.label.split(" (")[0]
+  if (label === "Card extended warranty") label = "Extra warranty from your card"
+  if (label === "Card return protection") label = "Return protection from your card"
+
+  let when: string
+  if (w.status === "claimed") when = "Claim filed ✓"
+  else if (w.status === "closed") when = "Closed"
+  else if (w.long_term) when = `Until ${end}`
+  else when = left === 0 ? "Closes today" : `${plural(left, "day")} left`
+
+  return {
+    key: w.label,
+    label,
+    sub: isCard ? "May cover. Confirm with your issuer." : undefined,
+    when,
+    source: w.source,
+    urgent: w.status === "closing_soon",
+    dim: w.status === "closed"
+  }
 }
 
 // Hook for e2e/demo_walk.py, which drives "Prepare claim" without clicking the panel.

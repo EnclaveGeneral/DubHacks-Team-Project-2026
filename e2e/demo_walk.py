@@ -62,7 +62,10 @@ def main(headed: bool) -> int:
             else None,
         )
         store.goto(f"{STORE}/product/rj-140")
+        store.get_by_role("button", name="M", exact=True).click()  # size
         store.get_by_role("button", name="Buy now").click()
+        store.wait_for_url("**/checkout")
+        store.get_by_role("button", name="Place order").click()
         store.wait_for_url("**/confirmation/RO-10482")
 
         toggle = store.locator("#backpocket-protect input[type=checkbox]")
@@ -99,9 +102,22 @@ def main(headed: bool) -> int:
               f"Day 3 alert: {a and a['body']}")
 
         panel = ctx.new_page()
+        panel.set_viewport_size({"width": 380, "height": 900})
         panel.goto(f"chrome-extension://{ext_id}/sidepanel.html")
-        panel.get_by_text("Price dropped $30").wait_for(timeout=10_000)
-        check(True, "Side panel shows the day-3 alert")
+
+        def snap(text: str, name: str) -> None:
+            panel.bring_to_front()
+            panel.reload()
+            try:
+                panel.get_by_text(text).first.wait_for(timeout=10_000)
+                check(True, f"Side panel shows {text!r}")
+            except Exception as e:
+                check(False, f"Side panel shows {text!r} ({str(e).splitlines()[0]})")
+            shot = Path(tempfile.gettempdir()) / f"backpocket-panel-{name}.png"
+            panel.screenshot(path=str(shot), full_page=True)
+            print(f"  screenshot: {shot}")
+
+        snap("Price dropped $30", "day3")
         clock = httpx.get(f"{SERVICE}/clock").json()
         tp = httpx.get(f"{SERVICE}/purchases").json()[0]
 
@@ -138,6 +154,7 @@ def main(headed: bool) -> int:
         a = alerts_by_kind().get("price_drop_declined")
         check(a is not None and a["action"] is None and "Clause 4.2" in a["body"],
               f"Day 20 declined: {a and a['body']}")
+        snap("no claim is available", "day20")
 
         # ---------- Day 28: return warning ----------
         httpx.post(f"{SERVICE}/clock", json={"day": 28}, timeout=10)
@@ -146,17 +163,7 @@ def main(headed: bool) -> int:
               and a["money"]["points_reversed"] == 420 and "pending" in a["body"],
               f"Day 28 warning: {a and a['body']}")
 
-        panel.bring_to_front()
-        panel.set_viewport_size({"width": 400, "height": 900})
-        panel.reload()
-        shot = Path(tempfile.gettempdir()) / "backpocket-panel-day28.png"
-        try:
-            panel.get_by_text("Return window closes in 2 days").wait_for(timeout=10_000)
-            check(True, "Side panel shows the day-28 warning")
-        except Exception:
-            check(False, "Side panel shows the day-28 warning")
-        panel.screenshot(path=str(shot), full_page=True)
-        print(f"Side panel screenshot: {shot}")
+        snap("Return window closes in 2 days", "day28")
         ctx.close()
 
     print(f"\n{'ALL PASSED' if not failures else f'{len(failures)} FAILED'}")

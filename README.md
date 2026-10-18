@@ -46,7 +46,7 @@ Then in Chrome: `chrome://extensions` → Developer mode → **Load unpacked** �
 
 Open http://localhost:5173 for the store. Reset everything with the **Reset** button in the side panel (or `POST localhost:8000/demo/reset`).
 
-Demo flow: **Buy now** → on the confirmation page tick **Protect this purchase** → skip to day **3** in the panel → **Prepare claim** → add an email and submit the form yourself → skip to days **20** and **28**.
+Demo flow: open the **Ridgeline Rain Jacket**, pick a size, **Buy now** → **Place order** → on the confirmation page tick **Protect this purchase** → skip to day **3** in the panel → **Prepare claim form** → add an email and submit the form yourself → skip to days **20** and **28**.
 
 ## Tests
 

@@ -1,27 +1,41 @@
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
-import ProductPage from './pages/ProductPage'
-import ConfirmationPage from './pages/ConfirmationPage'
+import { useEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { CartProvider } from './cart'
+import Layout from './components/Layout'
+import CartPage from './pages/CartPage'
+import CheckoutPage from './pages/CheckoutPage'
 import ClaimPage from './pages/ClaimPage'
+import CollectionPage from './pages/CollectionPage'
+import ConfirmationPage from './pages/ConfirmationPage'
+import HomePage from './pages/HomePage'
+import ProductPage from './pages/ProductPage'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
 
 export default function App() {
   return (
     <BrowserRouter>
-      <header className="site-header">
-        <Link to="/product/rj-140">Ridgeline Outfitters</Link>
-        <nav>
-          {/* Static page (public/policy.html), not a router route */}
-          <a href="/policy.html">Policies</a>
-          <Link to="/claim">Price adjustments &amp; returns</Link>
-        </nav>
-      </header>
-      <main>
-        <Routes>
-          <Route path="/" element={<Navigate to="/product/rj-140" replace />} />
-          <Route path="/product/rj-140" element={<ProductPage />} />
-          <Route path="/confirmation/:orderId" element={<ConfirmationPage />} />
-          <Route path="/claim" element={<ClaimPage />} />
-        </Routes>
-      </main>
+      <CartProvider>
+        <ScrollToTop />
+        <Layout>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/collections/:handle" element={<CollectionPage />} />
+            <Route path="/product/:slug" element={<ProductPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/confirmation/:orderId" element={<ConfirmationPage />} />
+            <Route path="/claim" element={<ClaimPage />} />
+            <Route path="*" element={<HomePage />} />
+          </Routes>
+        </Layout>
+      </CartProvider>
     </BrowserRouter>
   )
 }
