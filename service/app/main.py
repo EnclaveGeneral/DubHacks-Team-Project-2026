@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from . import cards, clock, db, extract, tracking
+from . import cards, clock, db, demo_data, extract, tracking
 from .schemas import (
     Alert,
     CardCatalogEntry,
@@ -65,7 +65,7 @@ app = FastAPI(title="BackPocket service", lifespan=lifespan)
 # CORSMiddleware does not accept wildcards in allow_origins, so use a regex.
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^(chrome-extension://.*|http://localhost:5173)$",
+    allow_origin_regex=r"^(chrome-extension://.*|http://localhost:(5173|5174))$",
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -99,7 +99,9 @@ DEMO_CARD = "northwind-4417"
 
 
 @app.post("/demo/reset", response_model=ClockState)
-def demo_reset():
+def demo_reset(seed: bool = False):
+    """Wipe the demo. With ?seed=true, also add the fictional-store purchases
+    (the extension's and website's Reset do this; the e2e scripts don't)."""
     # Under the purchase lock so an in-flight panel poll can't save a purchase
     # back after the wipe.
     with tracking.lock:
@@ -112,7 +114,17 @@ def demo_reset():
         select_card(DEMO_CARD)  # cached extraction, so this is instant
     except HTTPException:
         pass  # no cache and no API key: shopper picks the card in the panel
-    return clock.set_day(0)
+    state = clock.set_day(0)
+    if seed:
+        demo_data.seed(state.day)
+    return state
+
+
+@app.post("/demo/seed", response_model=list[TrackedPurchase])
+def demo_seed():
+    """Add the fictional-store purchases (Fjord & Pine, Hearthside Home), or
+    put them back to their starting state. Leaves other purchases alone."""
+    return demo_data.seed(clock.get().day)
 
 
 # ---------- Cards ----------
@@ -196,6 +208,15 @@ def report_price(order_id: str, body: ReportPrice):
 @app.get("/purchases", response_model=list[TrackedPurchase])
 def list_purchases():
     return tracking.refresh_all(clock.get().day)
+
+
+@app.get("/purchases/{order_id}", response_model=TrackedPurchase)
+def get_purchase(order_id: str):
+    with tracking.lock:
+        tp = tracking.load(order_id)
+        if tp is None:
+            raise HTTPException(404, "unknown order")
+        return tracking.refresh(tp, clock.get().day)
 
 
 @app.get("/state", response_model=PanelState)

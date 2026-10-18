@@ -10,6 +10,10 @@ import type {
 } from "./types"
 
 export const SERVICE = "http://localhost:8000"
+// The BackPocket website (web/). "More details" links go here.
+export const SITE = "http://localhost:5174"
+
+export const openSite = (path = "/") => chrome.tabs.create({ url: `${SITE}${path}` })
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
@@ -38,7 +42,8 @@ const post = (body?: unknown): RequestInit => ({
 
 export const getClock = () => call<ClockState>("/clock")
 export const setDay = (day: number) => call<ClockState>("/clock", post({ day }))
-export const resetDemo = () => call<ClockState>("/demo/reset", post())
+// Reset the demo and re-add the fictional-store purchases the website shows.
+export const resetDemo = () => call<ClockState>("/demo/reset?seed=true", post())
 
 export const getCards = () => call<CardCatalogEntry[]>("/cards")
 export const getSelectedCard = () => call<SelectedCard | null>("/cards/selected")
@@ -49,6 +54,8 @@ export const selectCard = (cardId: string) =>
 export const getState = () => call<PanelState>("/state")
 
 export const getPurchases = () => call<TrackedPurchase[]>("/purchases")
+export const getPurchase = (orderId: string) =>
+  call<TrackedPurchase>(`/purchases/${encodeURIComponent(orderId)}`)
 export const getAlerts = () => call<Alert[]>("/alerts")
 
 export const trackPurchase = (purchase: Purchase, policyText: string, manual = false) =>

@@ -1,6 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 
-import { markClaimFiled } from "~lib/api"
+import { localDraft } from "../../shared/ui/draft"
+import { getAlerts, getClock, getPurchase, markClaimFiled } from "~lib/api"
 import type { FormField } from "~lib/types"
 
 export const config: PlasmoCSConfig = {
@@ -119,6 +120,53 @@ async function waitForForm(timeoutMs = 4000): Promise<HTMLFormElement | null> {
   }
   return null
 }
+
+// Hand-off from the BackPocket website: its "Prepare claim form" button opens
+// this page as /claim#backpocket=<order id>&alert=<alert id>. Fill the form the
+// same way the side panel does, then leave it for the shopper to review and
+// submit. The hash is removed afterward so a reload doesn't fill it again.
+function showNote(text: string, ok = true) {
+  const note = document.createElement("div")
+  note.setAttribute(
+    "style",
+    [
+      "position:fixed", "top:16px", "right:16px", "z-index:2147483647", "max-width:320px",
+      "padding:10px 14px", "border-radius:10px", "background:#fff",
+      `border:1px solid ${ok ? "#d6ddd9" : "#e0a49a"}`, "box-shadow:0 6px 24px rgba(0,0,0,.15)",
+      "font:13px system-ui,sans-serif", `color:${ok ? "#1d2a24" : "#8a2d1d"}`
+    ].join(";")
+  )
+  note.textContent = text
+  document.body.appendChild(note)
+  setTimeout(() => note.remove(), 12000)
+}
+
+async function handoffFromSite() {
+  const params = new URLSearchParams(location.hash.replace(/^#/, ""))
+  const orderId = params.get("backpocket")
+  if (!orderId) return
+  history.replaceState(null, "", location.pathname + location.search)
+  try {
+    const [tp, alerts, clock] = await Promise.all([getPurchase(orderId), getAlerts(), getClock()])
+    const wanted = params.get("alert")
+    const mine = alerts.filter((a) => a.purchase_id === orderId && a.action)
+    const alert = mine.find((a) => a.id === wanted) ?? mine[0]
+    if (!alert) throw new Error("There's nothing to claim for this purchase right now.")
+    if (!(await waitForForm())) throw new Error("No form found on this page.")
+    const values = localDraft(collectFields(), tp, alert, clock)
+    const result = fill(values)
+    const left = result.failed.length
+    showNote(
+      `BackPocket filled ${result.filled.length} field${result.filled.length === 1 ? "" : "s"}` +
+        (left ? `, ${left} couldn't be filled` : "") +
+        ". Check the highlighted fields, then submit it yourself."
+    )
+  } catch (e) {
+    showNote(`BackPocket couldn't prepare this form: ${(e as Error).message}`, false)
+  }
+}
+
+handoffFromSite()
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "collect-fields") {

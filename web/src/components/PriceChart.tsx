@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react"
 
-import { isoDate } from "~lib/claim"
-import type { TimelineWindow, TrackedPurchase } from "~lib/types"
+import { isoDate } from "../../../shared/ui/format"
+import type { TimelineWindow, TrackedPurchase } from "../../../shared/ui/types"
 
 // Price since purchase (step line) against what the shopper paid, over the
 // windows when they can act on a lower price:

@@ -51,6 +51,15 @@ PRICE_SCHEDULE: dict[str, list[tuple[int, float]]] = {
     "AB-032": [(0, 32.00)],
     "DS-095": [(0, 95.00)],
     "LP-058": [(0, 58.00)],
+    # Items the fictional Fjord & Pine and Hearthside Home stores sold before
+    # day 0 (seeded by the BackPocket service for the website). Negative start
+    # days are earlier than the demo's day 0. These stores have no pages here;
+    # this server just answers for their prices.
+    "FP-TENT-249": [(-20, 249.00), (-4, 219.00), (8, 199.00)],
+    "FP-PACK-129": [(-30, 129.00), (-8, 99.00)],
+    "FP-FLEECE-89": [(-30, 89.00), (-6, 69.00), (10, 59.00)],
+    "HS-DINNER-120": [(-30, 120.00), (-5, 95.00)],
+    "HS-DUVET-89": [(-60, 89.00)],
 }
 
 state = {"day": 0, "claims": []}
