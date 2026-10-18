@@ -157,8 +157,16 @@ function SidePanel() {
 
   const needsCard = cardLoaded && !card
 
-  // This store's purchases first; on a page that isn't a store BackPocket knows, say so.
-  const mine = host ? purchases.filter((tp) => hostOf(tp.purchase.policy_url) === host) : purchases
+  // On a store's site, show that store's purchases. Anywhere else (including
+  // the BackPocket website), show everything, things to act on first, so the
+  // panel is never empty while purchases are being tracked.
+  const onBackPocket = host !== null && host === hostOf(SITE)
+  const mine = host && !onBackPocket ? purchases.filter((tp) => hostOf(tp.purchase.policy_url) === host) : []
+  const filtered = mine.length > 0
+  const hasAction = (tp: TrackedPurchase) => actionable(alerts, tp.purchase.order_id).length > 0
+  const shown = filtered
+    ? [...mine].reverse()
+    : [...purchases].reverse().sort((a, b) => Number(hasAction(b)) - Number(hasAction(a)))
   const others = purchases.length - mine.length
   const stores = new Set(purchases.map((tp) => tp.purchase.merchant)).size
   const urgent = new Set(
@@ -227,18 +235,16 @@ function SidePanel() {
         </div>
       )}
 
-      {host && purchases.length > 0 && mine.length === 0 && (
-        <div className="empty">
-          <strong>Nothing tracked from {host}</strong>
-          <p>
-            You're tracking {plural(purchases.length, "purchase")} from {plural(stores, "store")}
-            {urgent ? `, and ${urgent} ${urgent === 1 ? "needs" : "need"} a look` : ""}.
-          </p>
-        </div>
+      {purchases.length > 0 && !filtered && (
+        <p className="scope-note small muted">
+          {host && !onBackPocket ? `Nothing tracked from ${host} yet. ` : ""}
+          {plural(purchases.length, "purchase")} from {plural(stores, "store")}
+          {urgent ? `, ${urgent} ${urgent === 1 ? "needs" : "need"} a look` : ""}.
+        </p>
       )}
 
       {clock &&
-        [...mine].reverse().map((tp) => (
+        shown.map((tp) => (
           <PurchaseSummary
             key={tp.purchase.order_id}
             tp={tp}
@@ -250,7 +256,7 @@ function SidePanel() {
       {purchases.length > 0 && (
         <p className="all-link">
           <button className="link" onClick={() => openSite("/")}>
-            {host && others > 0 && mine.length > 0
+            {filtered && others > 0
               ? `${plural(others, "more purchase")} from other stores. Open BackPocket →`
               : "Open BackPocket to see all purchases →"}
           </button>

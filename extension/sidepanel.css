@@ -897,3 +897,7 @@ button.primary.done {
 .nowrap {
   white-space: nowrap;
 }
+
+.scope-note {
+  margin: 0 2px 10px;
+}
