@@ -569,6 +569,11 @@ button.primary:disabled {
 .price-chart .chart-label {
   font-size: 11px;
   fill: var(--ink-2);
+  /* A halo in the surface color so faint gridlines never cut through text. */
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
 
 .price-chart .chart-label.strong {

@@ -137,4 +137,6 @@ It resets the demo first. The first run on a new policy text calls Claude (about
 .venv/Scripts/python e2e/web_walk.py             # add --headed to watch
 ```
 
+`e2e/chart_overlaps.py` renders every purchase's price chart on the website for days 0-30 at desktop and phone widths and fails if any label touches a line, the end dot, or another label.
+
 `e2e/real_policy.py` runs the same extension against Target's live price-match page (needs internet; one Claude call per new version of the page text).

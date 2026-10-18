@@ -14,6 +14,7 @@ import type { TimelineWindow, TrackedPurchase } from "../../../shared/ui/types"
 const H = 150
 const PAD = { top: 8, right: 44, bottom: 20, left: 6 }
 const CHAR_W = 6.4 // approx width of an 11px character, for label collision checks
+const CHAR_W_BOLD = 7 // the same, semibold
 
 const shortDate = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", {
@@ -40,6 +41,33 @@ interface Box {
   y1: number
 }
 const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
+
+// A straight piece of a line on the chart (the price steps and the paid line
+// are only ever horizontal or vertical).
+interface Segment {
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+}
+const GAP = 3 // keep labels at least this far from lines
+const crosses = (b: Box, s: Segment) =>
+  overlaps(
+    { x0: b.x0 - GAP, x1: b.x1 + GAP, y0: b.y0 - GAP, y1: b.y1 + GAP },
+    { x0: Math.min(s.x0, s.x1), x1: Math.max(s.x0, s.x1) + 0.01, y0: Math.min(s.y0, s.y1), y1: Math.max(s.y0, s.y1) + 0.01 }
+  )
+
+interface Spot {
+  tx: number
+  ty: number
+  anchor: "start" | "end"
+}
+const boxOf = (s: Spot, w: number): Box => ({
+  x0: s.anchor === "end" ? s.tx - w : s.tx,
+  x1: s.anchor === "end" ? s.tx : s.tx + w,
+  y0: s.ty - 11,
+  y1: s.ty + 3
+})
 
 interface Band {
   key: "adjust" | "rebuy"
@@ -148,36 +176,64 @@ export default function PriceChart({ tp, today: clockDay, baseDate }: Props) {
   })
   line += ` H${x(today)}`
 
-  // "Paid" label sits just above the paid line at the left.
-  const paidText = `Paid ${money(p.price_paid)}`
-  const paidBox: Box = {
-    x0: PAD.left + 2,
-    x1: PAD.left + 2 + paidText.length * CHAR_W,
-    y0: y(p.price_paid) - 15,
-    y1: y(p.price_paid) - 2
-  }
+  // Every straight piece of the price line, for keeping labels off it.
+  const priceSegments: Segment[] = []
+  points.forEach(([d, v], i) => {
+    const xEnd = i + 1 < points.length ? x(points[i + 1][0]) : x(today)
+    priceSegments.push({ x0: x(d), y0: y(v), x1: xEnd, y1: y(v) })
+    if (i + 1 < points.length) priceSegments.push({ x0: xEnd, y0: y(v), x1: xEnd, y1: y(points[i + 1][1]) })
+  })
+  const paidY = y(p.price_paid)
+  const paidSegment: Segment = { x0: PAD.left, y0: paidY, x1: right, y1: paidY }
+  const inside = (b: Box) => b.x0 >= PAD.left && b.x1 <= right && b.y0 >= PAD.top && b.y1 <= bottom
 
-  // Current-price label: first spot that fits inside the plot and misses "Paid".
   const nowPrice = priceOn(today)
-  const nowText = `${money(nowPrice)} now`
-  const nowW = nowText.length * CHAR_W
   const dx = x(today)
   const dy = y(nowPrice)
-  const spots = [
-    { tx: dx - 8, ty: dy - 8, anchor: "end" as const },
-    { tx: dx + 8, ty: dy - 8, anchor: "start" as const },
-    { tx: dx - 8, ty: dy + 16, anchor: "end" as const },
-    { tx: dx + 8, ty: dy + 16, anchor: "start" as const }
+  const dot: Box = { x0: dx - 6, x1: dx + 6, y0: dy - 6, y1: dy + 6 }
+
+  // "Paid" label: above the paid line on the left if the price line and the
+  // end dot aren't there, else below it, else on the right.
+  const paidText = `Paid ${money(p.price_paid)}`
+  const paidW = paidText.length * CHAR_W
+  const paidSpots: Spot[] = [
+    { tx: PAD.left + 4, ty: paidY - 5, anchor: "start" },
+    { tx: PAD.left + 4, ty: paidY + 15, anchor: "start" },
+    { tx: right - 4, ty: paidY - 5, anchor: "end" },
+    { tx: right - 4, ty: paidY + 15, anchor: "end" }
   ]
-  const nowSpot = spots.find((s) => {
-    const box: Box = {
-      x0: s.anchor === "end" ? s.tx - nowW : s.tx,
-      x1: s.anchor === "end" ? s.tx : s.tx + nowW,
-      y0: s.ty - 11,
-      y1: s.ty + 2
-    }
-    const inside = box.x0 >= PAD.left && box.x1 <= right && box.y0 >= PAD.top && box.y1 <= bottom
-    return inside && !overlaps(box, paidBox)
+  const paidSpot =
+    paidSpots.find((sp) => {
+      const b = boxOf(sp, paidW)
+      return inside(b) && !overlaps(b, dot) && !priceSegments.some((seg) => crosses(b, seg))
+    }) ?? paidSpots[0]
+  const paidBox = boxOf(paidSpot, paidW)
+
+  // Current-price label: the first spot around the dot that stays inside the
+  // plot and off every line, the dot, and the "Paid" label. If none fits, it's
+  // left off (the hover readout still shows the price).
+  const nowText = `${money(nowPrice)} now`
+  const nowW = nowText.length * CHAR_W_BOLD
+  const nowSpots: Spot[] = [
+    { tx: dx - 9, ty: dy - 9, anchor: "end" },
+    { tx: dx + 9, ty: dy - 9, anchor: "start" },
+    { tx: dx - 9, ty: dy + 18, anchor: "end" },
+    { tx: dx + 9, ty: dy + 18, anchor: "start" },
+    { tx: dx + 10, ty: dy + 4, anchor: "start" },
+    { tx: dx - 10, ty: dy + 4, anchor: "end" },
+    { tx: dx - 9, ty: dy - 22, anchor: "end" },
+    { tx: dx + 9, ty: dy - 22, anchor: "start" },
+    { tx: dx - 9, ty: dy + 31, anchor: "end" },
+    { tx: dx + 9, ty: dy + 31, anchor: "start" }
+  ]
+  const nowSpot = nowSpots.find((sp) => {
+    const b = boxOf(sp, nowW)
+    return (
+      inside(b) &&
+      !overlaps(b, dot) &&
+      !overlaps(b, paidBox) &&
+      ![...priceSegments, paidSegment].some((seg) => crosses(b, seg))
+    )
   })
 
   const hoverDay = hover === null ? null : Math.min(today, Math.max(d0, hover))
@@ -231,7 +287,7 @@ export default function PriceChart({ tp, today: clockDay, baseDate }: Props) {
         ))}
 
         <line x1={PAD.left} x2={right} y1={y(p.price_paid)} y2={y(p.price_paid)} className="paid" />
-        <text x={paidBox.x0} y={paidBox.y1 - 2} className="chart-label">
+        <text x={paidSpot.tx} y={paidSpot.ty} textAnchor={paidSpot.anchor} className="chart-label">
           {paidText}
         </text>
 
