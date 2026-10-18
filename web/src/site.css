@@ -1,0 +1,376 @@
+/* Website layout. Tokens, alerts, chart, deadlines, quotes and the demo bar
+   come from base.css (the same look as the extension's side panel). */
+
+body {
+  font-size: 15px;
+}
+
+a {
+  color: var(--accent);
+}
+
+.wrap {
+  width: min(1080px, 100% - 32px);
+  margin: 0 auto;
+}
+
+.site {
+  min-height: 100vh;
+  padding-bottom: 64px; /* room for the fixed demo bar */
+}
+
+.site-top {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--plane) 92%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.site-top-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 56px;
+}
+
+.site-top .brand {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 17px;
+}
+
+.site-nav {
+  display: flex;
+  gap: 4px;
+  margin-right: auto;
+}
+
+.site-nav a {
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.site-nav a:hover {
+  background: var(--info-bg);
+}
+
+.site-nav a.active {
+  background: var(--info-bg);
+  color: var(--ink);
+}
+
+a.card-chip {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.site-main {
+  padding: 24px 0 32px;
+}
+
+.demo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Dashboard */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.stat-num {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.chip:hover {
+  border-color: var(--series);
+}
+
+.chip.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+
+.purchase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.purchase-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.purchase-card h2 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.purchase-card h2 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.purchase-card h2 a:hover {
+  text-decoration: underline;
+}
+
+.purchase-card header p {
+  margin: 2px 0 0;
+}
+
+.now-price {
+  color: var(--good);
+}
+
+.purchase-card .alert .detail {
+  margin: 4px 0 0 28px;
+}
+
+.purchase-card footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.purchase-card .more {
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.purchase-card .more:hover {
+  text-decoration: underline;
+}
+
+/* Detail pages */
+
+.crumbs {
+  margin: 0 0 8px;
+}
+
+.detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.detail-head h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+
+.detail-head p {
+  margin: 4px 0 0;
+}
+
+.price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.price-now {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.detail-main,
+.detail-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* let the chart shrink with its column */
+  gap: 16px;
+}
+
+.card-block {
+  min-width: 0;
+}
+
+.card-block {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.card-block h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.card-block > .alert:first-of-type {
+  margin-top: 0;
+}
+
+.protection p {
+  margin: 0 0 4px;
+}
+
+.term-row dd .quote {
+  margin-top: 6px;
+}
+
+.terms.wide .term-row {
+  grid-template-columns: 110px 1fr;
+}
+
+.detail-side .term-row {
+  grid-template-columns: 100px 1fr;
+}
+
+/* Buttons that are links, and the message drafter */
+
+a.primary {
+  display: block;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--good);
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+a.primary:hover,
+button.primary:hover {
+  filter: brightness(1.08);
+}
+
+button.primary {
+  width: auto;
+  min-width: 160px;
+}
+
+.message-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.message-actions button.primary {
+  margin-top: 0;
+}
+
+button.secondary {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-weight: 600;
+}
+
+button.secondary:hover {
+  border-color: var(--series);
+}
+
+.alert .alert-body {
+  max-width: 62ch;
+}
+
+.card-block .alert + .alert {
+  margin-top: 10px;
+}
+
+.card-options button.card-option {
+  width: 100%;
+}
+
+.json {
+  max-height: 320px;
+}
+
+@media (max-width: 760px) {
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .site-top-row {
+    gap: 10px;
+  }
+
+  .detail-head {
+    flex-direction: column;
+  }
+
+  .price-block {
+    align-items: flex-start;
+    text-align: left;
+  }
+}

@@ -3,14 +3,14 @@
 //
 //   npm run dev            (from the repo root)
 //
-// - Starts store-server (8001), service (8000), store (5173), and the extension build.
+// - Starts store-server (8001), service (8000), store (5173), web (5174), and the extension build.
 // - Restarts any process that exits, with backoff if it keeps crashing.
 // - Health-checks the three servers and restarts one that stops answering.
 // - Frees a port held by a stale process from an earlier run before starting.
 // - Ctrl+C stops everything.
 //
 // While it runs, type a command and press Enter:
-//   r            restart everything        r service   restart one (store-server, service, store, extension)
+//   r            restart everything        r service   restart one (store-server, service, store, web, extension)
 //   s            show status               q           quit
 // Each process's output is also written to .logs/<name>.log.
 
@@ -52,6 +52,15 @@ const PROCS = [
     args: ['run', 'dev'],
     port: 5173,
     health: 'http://localhost:5173/',
+  },
+  {
+    name: 'web',
+    color: 34,
+    cwd: 'web',
+    cmd: 'npm',
+    args: ['run', 'dev'],
+    port: 5174,
+    health: 'http://localhost:5174/',
   },
   {
     name: 'extension',
@@ -239,7 +248,7 @@ process.on('exit', () => {
   for (const p of PROCS) if (p.child) killTree(p.child.pid)
 })
 
-say('starting store-server, service, store, extension  (type r / r <name> / s / q + Enter)')
+say('starting store-server, service, store, web, extension  (type r / r <name> / s / q + Enter)')
 for (const p of PROCS) start(p)
 setInterval(checkHealth, HEALTH_EVERY_MS)
 

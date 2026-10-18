@@ -1,6 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 
-import { markClaimFiled } from "~lib/api"
+import { localDraft } from "../../shared/ui/draft"
+import { getAlerts, getClock, getPurchase, markClaimFiled, redeemHandoff, ServiceUnreachable } from "~lib/api"
 import type { FormField } from "~lib/types"
 
 export const config: PlasmoCSConfig = {
@@ -119,6 +120,66 @@ async function waitForForm(timeoutMs = 4000): Promise<HTMLFormElement | null> {
   }
   return null
 }
+
+// Hand-off from the BackPocket website: its "Prepare claim form" button opens
+// this page as /claim#backpocket-handoff=<single-use code>. The form is filled
+// only if the service accepts the code (only BackPocket's own pages can get
+// one), so a link from anywhere else can't make the extension fill this form.
+// The shopper still reviews and submits it themselves.
+function showNote(text: string, ok = true) {
+  const note = document.createElement("div")
+  note.setAttribute(
+    "style",
+    [
+      "position:fixed", "top:16px", "right:16px", "z-index:2147483647", "max-width:320px",
+      "padding:10px 14px", "border-radius:10px", "background:#fff",
+      `border:1px solid ${ok ? "#d6ddd9" : "#e0a49a"}`, "box-shadow:0 6px 24px rgba(0,0,0,.15)",
+      "font:13px system-ui,sans-serif", `color:${ok ? "#1d2a24" : "#8a2d1d"}`
+    ].join(";")
+  )
+  note.textContent = text
+  document.body.appendChild(note)
+  setTimeout(() => note.remove(), 12000)
+}
+
+async function handoffFromSite() {
+  const token = new URLSearchParams(location.hash.replace(/^#/, "")).get("backpocket-handoff")
+  if (!token) return
+  const clearHash = () => history.replaceState(null, "", location.pathname + location.search)
+  let orderId: string
+  let alertId: string
+  try {
+    ;({ order_id: orderId, alert_id: alertId } = await redeemHandoff(token))
+    clearHash() // used up either way now
+  } catch (e) {
+    if (e instanceof ServiceUnreachable) {
+      // Keep the code so reloading the page can try again.
+      showNote("BackPocket couldn't reach its service. Start it, then reload this page.", false)
+    } else {
+      clearHash()
+      showNote(`BackPocket didn't fill this form: ${(e as Error).message}`, false)
+    }
+    return
+  }
+  try {
+    const [tp, alerts, clock] = await Promise.all([getPurchase(orderId), getAlerts(), getClock()])
+    const alert = alerts.find((a) => a.purchase_id === orderId && a.id === alertId && a.action)
+    if (!alert) throw new Error("There's nothing to claim for this purchase right now.")
+    if (!(await waitForForm())) throw new Error("No form found on this page.")
+    const values = localDraft(collectFields(), tp, alert, clock)
+    const result = fill(values)
+    const left = result.failed.length
+    showNote(
+      `BackPocket filled ${result.filled.length} field${result.filled.length === 1 ? "" : "s"}` +
+        (left ? `, ${left} couldn't be filled` : "") +
+        ". Check the highlighted fields, then submit it yourself."
+    )
+  } catch (e) {
+    showNote(`BackPocket couldn't prepare this form: ${(e as Error).message}`, false)
+  }
+}
+
+handoffFromSite()
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "collect-fields") {

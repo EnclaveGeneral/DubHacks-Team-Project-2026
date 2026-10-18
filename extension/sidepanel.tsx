@@ -1,17 +1,28 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react"
 
-import PriceChart from "~components/PriceChart"
+import { actionLabel, alertIcon, alertTone, explainAlert } from "../shared/ui/explain"
 import {
+  actionable,
+  currentPrice,
+  dayFromIso,
+  fmtDate,
+  isoDate,
+  nextDeadline,
+  plural,
+  usd
+} from "../shared/ui/format"
+import {
+  SITE,
   getCards,
   getState,
+  openSite,
   readPolicy,
-  reportPrice,
   resetDemo,
   selectCard,
   setDay,
   trackPurchase
 } from "~lib/api"
-import { draftMessage, isoDate, prepareClaim } from "~lib/claim"
+import { draftMessage, prepareClaim } from "~lib/claim"
 import { readActiveTab, type TabText } from "~lib/readTab"
 import type {
   Alert,
@@ -20,31 +31,66 @@ import type {
   ClockState,
   MerchantPolicy,
   SelectedCard,
-  TimelineWindow,
   TrackedPurchase
 } from "~lib/types"
 
 import "./sidepanel.css"
 
-// Layout, top to bottom: the one thing to act on, the price chart, then
-// deadlines. Everything else (card terms, full clauses) is one click away.
+// The panel is the in-the-moment view: what's tracked from the store in the
+// current tab, the one thing to act on, and the next deadline. Price charts,
+// every deadline, the quoted clauses and the card terms live on the BackPocket
+// website ("More details").
 
-const fmtDate = (iso: string, withYear = false) =>
-  new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    ...(withYear ? { year: "numeric" } : {}),
-    timeZone: "UTC"
-  })
+// ---------- Which store is this tab? ----------
 
-const usd = (n: number) => `$${n.toFixed(2)}`
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`
+const bare = (host: string) => host.replace(/^www\./, "")
 
-const PRIORITY: Record<Alert["kind"], number> = {
-  price_drop_claimable: 0,
-  return_rebuy: 1,
-  window_closing: 2,
-  card_protection: 3
+/**
+ * Which site a URL belongs to, for "this store's purchases". Local dev servers
+ * keep their port (localhost:5173 is the store, localhost:5174 is the BackPocket
+ * site); real sites compare by registrable domain, so help.store.com and
+ * www.store.com are the same store.
+ */
+function hostOf(url: string): string | null {
+  try {
+    const u = new URL(url)
+    const host = bare(u.hostname)
+    if (host === "localhost" || /^[\d.]+$/.test(host) || host.includes(":")) return u.host
+    const labels = host.split(".")
+    // example.com -> example.com; shop.example.co.uk -> example.co.uk
+    const keep = labels.length > 2 && labels[labels.length - 1].length === 2 && labels[labels.length - 2].length <= 3 ? 3 : 2
+    return labels.slice(-keep).join(".")
+  } catch {
+    return null
+  }
+}
+
+/** Hostname of the active tab, or null when it isn't a web page (then the panel shows everything). */
+function useActiveHost(): string | null {
+  const [host, setHost] = useState<string | null>(null)
+  useEffect(() => {
+    const update = async () => {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
+        setHost(tab?.url && /^https?:/.test(tab.url) ? hostOf(tab.url) : null)
+      } catch {
+        setHost(null)
+      }
+    }
+    // Only the active tab moving to a new page matters, not every title,
+    // favicon, or loading update from background tabs.
+    const onUpdated = (_id: number, change: { url?: string; status?: string }, tab: chrome.tabs.Tab) => {
+      if (tab.active && (change.url || change.status === "complete")) update()
+    }
+    update()
+    chrome.tabs.onActivated.addListener(update)
+    chrome.tabs.onUpdated.addListener(onUpdated)
+    return () => {
+      chrome.tabs.onActivated.removeListener(update)
+      chrome.tabs.onUpdated.removeListener(onUpdated)
+    }
+  }, [])
+  return host
 }
 
 function SidePanel() {
@@ -55,10 +101,10 @@ function SidePanel() {
   const [purchases, setPurchases] = useState<TrackedPurchase[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [showCard, setShowCard] = useState(false)
   const [reading, setReading] = useState<
     { status: "loading" } | { status: "error"; message: string } | { status: "done"; page: TabText; policy: MerchantPolicy } | null
   >(null)
+  const host = useActiveHost()
 
   const readThisPage = async () => {
     setReading({ status: "loading" })
@@ -108,6 +154,14 @@ function SidePanel() {
 
   const needsCard = cardLoaded && !card
 
+  // This store's purchases first; on a page that isn't a store BackPocket knows, say so.
+  const mine = host ? purchases.filter((tp) => hostOf(tp.purchase.policy_url) === host) : purchases
+  const others = purchases.length - mine.length
+  const stores = new Set(purchases.map((tp) => tp.purchase.merchant)).size
+  const urgent = new Set(
+    alerts.filter((a) => a.kind !== "card_protection").map((a) => a.purchase_id)
+  ).size
+
   return (
     <div className="panel">
       <header className="top">
@@ -120,7 +174,7 @@ function SidePanel() {
             {reading?.status === "loading" ? "Reading…" : "Read this page"}
           </button>
           {card && (
-            <button className="card-chip" onClick={() => setShowCard((s) => !s)} aria-expanded={showCard}>
+            <button className="card-chip" onClick={() => openSite("/card")} title="Card terms on BackPocket">
               <span className="visa">VISA</span> ···· {card.last4}
             </button>
           )}
@@ -151,13 +205,11 @@ function SidePanel() {
 
       {error && <p className="banner error">{error}</p>}
 
-      {(needsCard || showCard) && (
-        <CardSheet
+      {needsCard && (
+        <CardPicker
           cards={cards}
-          card={card}
           onPicked={(c) => {
             setCard(c)
-            setShowCard(false)
           }}
         />
       )}
@@ -172,17 +224,35 @@ function SidePanel() {
         </div>
       )}
 
+      {host && purchases.length > 0 && mine.length === 0 && (
+        <div className="empty">
+          <strong>Nothing tracked from {host}</strong>
+          <p>
+            You're tracking {plural(purchases.length, "purchase")} from {plural(stores, "store")}
+            {urgent ? `, and ${urgent} ${urgent === 1 ? "needs" : "need"} a look` : ""}.
+          </p>
+        </div>
+      )}
+
       {clock &&
-        [...purchases].reverse().map((tp) => (
-          <PurchaseView
+        [...mine].reverse().map((tp) => (
+          <PurchaseSummary
             key={tp.purchase.order_id}
             tp={tp}
             clock={clock}
-            alerts={alerts
-              .filter((a) => a.purchase_id === tp.purchase.order_id && a.kind !== "card_protection")
-              .sort((a, b) => PRIORITY[a.kind] - PRIORITY[b.kind])}
+            alerts={actionable(alerts, tp.purchase.order_id)}
           />
         ))}
+
+      {purchases.length > 0 && (
+        <p className="all-link">
+          <button className="link" onClick={() => openSite("/")}>
+            {host && others > 0 && mine.length > 0
+              ? `${plural(others, "more purchase")} from other stores. Open BackPocket →`
+              : "Open BackPocket to see all purchases →"}
+          </button>
+        </p>
+      )}
 
       <footer className="demo-bar" aria-label="Demo clock">
         <span className="demo-label">
@@ -214,15 +284,8 @@ function SidePanel() {
 
 // ---------- Card ----------
 
-function CardSheet({
-  cards,
-  card,
-  onPicked
-}: {
-  cards: CardCatalogEntry[]
-  card: SelectedCard | null
-  onPicked: (c: SelectedCard) => void
-}) {
+// First-run setup only. Card terms and switching cards live on the website.
+function CardPicker({ cards, onPicked }: { cards: CardCatalogEntry[]; onPicked: (c: SelectedCard) => void }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
@@ -238,70 +301,20 @@ function CardSheet({
     }
   }
 
-  const b = card?.benefits
   return (
     <section className="sheet">
-      {b ? (
-        <>
-          <h2>{cards.find((c) => c.card_id === card.card_id)?.product_name ?? b.display_name}</h2>
-          <dl className="terms">
-            <div className="term-row">
-              <dt>Earns</dt>
-              <dd>
-                {b.earn_rate_points_per_dollar.value} pts per $1
-                <LowConfidence c={b.earn_rate_points_per_dollar} />
-              </dd>
-            </div>
-            <div className="term-row">
-              <dt>On refunds</dt>
-              <dd>
-                {b.reversal_rule.value === "proportional"
-                  ? "Points on the refunded amount are taken back"
-                  : b.reversal_rule.value === "none"
-                    ? "You keep your points"
-                    : b.reversal_rule.value === "threshold"
-                      ? `Points taken back on refunds over $${b.reversal_threshold_dollars.value}`
-                      : "All points on the purchase are taken back"}
-                <LowConfidence c={b.reversal_rule} />
-              </dd>
-            </div>
-            {b.protections.map((p) => (
-              <div key={p.type} className="term-row">
-                <dt>{p.type === "extended_warranty" ? "Warranty" : "Returns"}</dt>
-                <dd>
-                  {p.type === "extended_warranty"
-                    ? `May add ${p.extends_months.value} months to the maker's warranty`
-                    : `May refund returns a store refuses, within ${p.window_days.value} days`}
-                </dd>
-              </div>
-            ))}
-          </dl>
-          <details>
-            <summary>Everything BackPocket read from the benefits guide</summary>
-            <pre className="json">{JSON.stringify(b, null, 2)}</pre>
-          </details>
-          <p className="small muted">Switch card</p>
-        </>
-      ) : (
-        <>
-          <h2>Which card do you use?</h2>
-          <p className="small muted">
-            BackPocket reads the card's public benefits guide. No card number or login.
-          </p>
-        </>
-      )}
+      <h2>Which card do you use?</h2>
+      <p className="small muted">BackPocket reads the card's public benefits guide. No card number or login.</p>
       <div className="card-options">
-        {cards
-          .filter((c) => c.card_id !== card?.card_id)
-          .map((c) => (
-            <button key={c.card_id} className="card-option" disabled={!!busy} onClick={() => pick(c.card_id)}>
-              <span className="visa">VISA</span>
-              <span>
-                <strong>···· {c.last4}</strong> <span className="muted">{c.product_name}</span>
-              </span>
-              {busy === c.card_id && <span className="muted small">Reading guide…</span>}
-            </button>
-          ))}
+        {cards.map((c) => (
+          <button key={c.card_id} className="card-option" disabled={!!busy} onClick={() => pick(c.card_id)}>
+            <span className="visa">VISA</span>
+            <span>
+              <strong>···· {c.last4}</strong> <span className="muted">{c.product_name}</span>
+            </span>
+            {busy === c.card_id && <span className="muted small">Reading guide…</span>}
+          </button>
+        ))}
       </div>
       {err && <p className="error small">{err}</p>}
     </section>
@@ -309,11 +322,6 @@ function CardSheet({
 }
 
 // ---------- Any store: read a policy page, track a purchase ----------
-
-function dayFromIso(baseDate: string, iso: string): number {
-  const ms = Date.parse(`${iso}T12:00:00Z`) - Date.parse(`${baseDate}T12:00:00Z`)
-  return Math.round(ms / 86400000)
-}
 
 function PolicySheet({
   page,
@@ -534,126 +542,61 @@ function AddPurchaseForm({
 
 // ---------- Purchase ----------
 
-function PurchaseView({ tp, clock, alerts }: { tp: TrackedPurchase; clock: ClockState; alerts: Alert[] }) {
+function PurchaseSummary({ tp, clock, alerts }: { tp: TrackedPurchase; clock: ClockState; alerts: Alert[] }) {
   const p = tp.purchase
   const [primary, ...rest] = alerts
+  const now = currentPrice(tp, clock.day)
+  const next = nextDeadline(tp, clock.day)
+  const details = `/purchases/${encodeURIComponent(p.order_id)}`
   return (
     <article className="purchase">
       <header className="purchase-head">
         <div>
           <h1>{p.item_name}</h1>
           <p className="muted small">
-            {p.merchant} · Paid {usd(p.price_paid)} on {fmtDate(isoDate(clock.base_date, p.purchase_day))}
+            {p.merchant} · paid {usd(p.price_paid)} on {fmtDate(isoDate(clock.base_date, p.purchase_day))}
+            {now < p.price_paid && <> · now {usd(now)}</>}
           </p>
         </div>
       </header>
 
       {primary ? (
-        <AlertCard alert={primary} tp={tp} clock={clock} />
+        <AlertSummary alert={primary} tp={tp} clock={clock} />
       ) : (
         <p className="all-clear">
           <span className="ok-dot" aria-hidden="true" /> Nothing to do. BackPocket is watching the price and your
           deadlines.
         </p>
       )}
-      {rest.map((a) => (
-        <AlertCard key={a.id} alert={a} tp={tp} clock={clock} compact />
-      ))}
 
-      <section className="block">
-        <h2>Price Tracker</h2>
-        <PriceChart tp={tp} today={clock.day} baseDate={clock.base_date} />
-        {!p.sku && <ReportLowerPrice tp={tp} />}
-      </section>
-
-      <section className="block">
-        <h2>Deadlines</h2>
-        <Deadlines tp={tp} clock={clock} />
-      </section>
-    </article>
-  )
-}
-
-function ReportLowerPrice({ tp }: { tp: TrackedPurchase }) {
-  const [open, setOpen] = useState(false)
-  const [price, setPrice] = useState("")
-  const [err, setErr] = useState<string | null>(null)
-
-  if (!open) {
-    return (
-      <button className="link small lower-price" onClick={() => setOpen(true)}>
-        Saw a lower price at {tp.purchase.merchant}?
+      <p className="next-deadline small muted">
+        {next
+          ? `Next deadline: ${next.label}, ${next.left === 0 ? "closes today" : `${plural(next.left, "day")} left`}`
+          : "No short-term deadlines open"}
+        {rest.length > 0 && ` · ${rest.length} more to look at`}
+      </p>
+      <button className="link more-details" onClick={() => openSite(details)}>
+        More details →
       </button>
-    )
-  }
-  const submit = async (e: FormEvent) => {
-    e.preventDefault()
-    const v = Number(price)
-    if (!(v > 0)) return setErr("Enter the price you saw.")
-    try {
-      await reportPrice(tp.purchase.order_id, v)
-      setOpen(false)
-      setPrice("")
-      setErr(null)
-    } catch (e) {
-      setErr((e as Error).message)
-    }
-  }
-  return (
-    <form className="lower-price-form" onSubmit={submit}>
-      <input
-        inputMode="decimal"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-        placeholder="Price you saw today"
-        aria-label="Lower price you saw today"
-        autoFocus
-      />
-      <button className="small-btn">Check</button>
-      {err && <span className="error small">{err}</span>}
-    </form>
+    </article>
   )
 }
 
 // ---------- Alerts ----------
 
-function pointsPhrase(lost: number): string {
-  if (lost > 0) return ` after losing ${lost} points`
-  if (lost < 0) return `, and you'd earn about ${-lost} more points`
-  return ""
-}
-
-function currentPrice(tp: TrackedPurchase, day: number): number {
-  const seen = Object.keys(tp.price_history)
-    .map(Number)
-    .filter((d) => d <= day)
-  return seen.length ? tp.price_history[String(Math.max(...seen))] : tp.purchase.price_paid
-}
-
-function AlertCard({
-  alert,
-  tp,
-  clock,
-  compact = false
-}: {
-  alert: Alert
-  tp: TrackedPurchase
-  clock: ClockState
-  compact?: boolean
-}) {
-  const [open, setOpen] = useState(!compact)
+function AlertSummary({ alert, tp, clock }: { alert: Alert; tp: TrackedPurchase; clock: ClockState }) {
   const [error, setError] = useState<string | null>(null)
   const [filled, setFilled] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [showAll, setShowAll] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-  const m = alert.money
-  const pm = tp.timeline.find((w) => w.label === "Price match")
+  const { detail } = explainAlert(alert, tp, clock)
+  const tone = alertTone(alert)
+  const label = actionLabel(alert, tp)
+  const hasForm = Boolean(tp.purchase.claim_form_url)
 
-  const prepare = async () => {
-    if (!tp.purchase.claim_form_url) {
-      setMessage(draftMessage(tp, alert, clock))
+  const act = async () => {
+    // Stores without a web form: the message is drafted (and copied) on the website.
+    if (!hasForm) {
+      openSite(`/purchases/${encodeURIComponent(tp.purchase.order_id)}?alert=${encodeURIComponent(alert.id)}`)
       return
     }
     setBusy(true)
@@ -668,140 +611,24 @@ function AlertCard({
     }
   }
 
-  const ret = tp.timeline.find((w) => w.label === "Return")
-  const returnLeft = ret ? Math.max(0, ret.closes_day - clock.day) : null
-  const pending = alert.body.includes("pending")
-
-  // What the shopper ends up with, after card points are taken back.
-  const outcome = (mm: NonNullable<typeof m>, verb: "get" | "save") =>
-    `You'd ${verb} about ${usd(mm.net_estimate)}${verb === "get" ? " back" : ""}${pointsPhrase(mm.points_reversed)}.`
-
-  let detail: string | null = null
-  let steps: string[] = []
-  if (alert.kind === "price_drop_claimable") {
-    const left = pm ? Math.max(0, pm.closes_day - clock.day) : null
-    detail = [left !== null && `${plural(left, "day")} left to claim.`, m && outcome(m, "get")].filter(Boolean).join(" ")
-  } else if (alert.kind === "return_rebuy" && m) {
-    const why = tp.claims_filed.includes("price_match")
-      ? "You've used your one price adjustment"
-      : pm
-        ? `Price adjustments end after ${pm.closes_day - pm.opens_day} days`
-        : "This store doesn't adjust prices"
-    detail = `${why}, but you can still return it. ${outcome(m, "save")}${pending ? " Assumes your pending adjustment is approved." : ""}`
-    const current = currentPrice(tp, clock.day)
-    const by =
-      ret?.open_ended || returnLeft === null ? "" : returnLeft === 0 ? " today" : ` within ${plural(returnLeft, "day")}`
-    steps = [`Buy it again at ${usd(current)}.`, `Return the original${by} for ${usd(current + m.refund)}.`]
-  } else if (alert.kind === "window_closing" && m) {
-    detail =
-      `Refunds ${usd(m.refund)}` +
-      (m.points_reversed ? `, takes back about ${m.points_reversed} points` : "") +
-      "." +
-      (pending ? " Assumes your pending adjustment is approved." : "")
-  }
-
-  const action =
-    alert.action === "prepare_claim"
-      ? tp.purchase.claim_form_url
-        ? "Prepare claim form"
-        : "Draft a request message"
-      : alert.action === "prepare_return"
-        ? tp.purchase.claim_form_url
-          ? "Prepare return form"
-          : "Draft a return message"
-        : null
-
-  const tone = alert.kind === "window_closing" ? "warn" : "good"
-  const iconChar = alert.kind === "return_rebuy" ? "↺" : tone === "warn" ? "!" : "↓"
-
   return (
-    <div className={`alert ${tone} ${compact ? "compact" : ""}`}>
-      <button
-        className="alert-head"
-        onClick={() => compact && setOpen((o) => !o)}
-        aria-expanded={compact ? open : undefined}
-        tabIndex={compact ? 0 : -1}>
+    <div className={`alert ${tone}`}>
+      <div className="alert-head">
         <span className={`alert-icon ${tone}`} aria-hidden="true">
-          {iconChar}
+          {alertIcon(alert)}
         </span>
         <span className="alert-title">{alert.title}</span>
-        {compact && <span className="chev" aria-hidden="true">{open ? "▴" : "▾"}</span>}
-      </button>
-      {open && (
-        <div className="alert-body">
-          {detail && <p className="detail">{detail}</p>}
-          {steps.length > 0 && (
-            <ol className="steps">
-              {steps.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ol>
-          )}
-          {(showAll ? alert.citations : alert.citations.slice(0, 1)).map((c, i) => (
-            <Quote key={i} c={c} policyUrl={tp.policy.source_url} />
-          ))}
-          {!showAll && alert.citations.length > 1 && (
-            <button className="link small" onClick={() => setShowAll(true)}>
-              Show {alert.citations.length - 1} more source{alert.citations.length > 2 ? "s" : ""}
-            </button>
-          )}
-          {action && !message && (
-            <button className={`primary ${filled ? "done" : ""}`} onClick={prepare} disabled={busy}>
-              {busy ? "Preparing…" : filled ? "Form filled ✓ Review it, then submit" : action}
-            </button>
-          )}
-          {message && (
-            <div className="message">
-              <p className="small">
-                <strong>How to send it:</strong> {tp.policy.how_to_request.value ?? "contact customer service"}.
-                Review the message, then send it yourself.
-              </p>
-              <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={9} />
-              <button
-                className="primary"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(message)
-                  setCopied(true)
-                }}>
-                {copied ? "Copied" : "Copy message"}
-              </button>
-              {tp.policy.how_to_request.quote && <Quote c={tp.policy.how_to_request} policyUrl={tp.policy.source_url} />}
-            </div>
-          )}
-          {error && <p className="small error">{error}</p>}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function Quote({ c, policyUrl }: { c: Cited<unknown>; policyUrl?: string }) {
-  const [full, setFull] = useState(false)
-  if (!c.quote) return null
-  const isCard = c.clause?.startsWith("§")
-  const source = isCard ? "Card benefits guide" : "Store policy"
-  const href = isCard
-    ? undefined
-    : c.source_url
-      ? c.source_url
-      : policyUrl && c.clause
-        ? `${policyUrl}#clause-${c.clause}`
-        : undefined
-  return (
-    <figure className="quote">
-      <figcaption>
-        {source} {c.clause}
-        {href && (
-          <a href={href} target="_blank" rel="noreferrer">
-            Open
-          </a>
+      </div>
+      <div className="alert-body">
+        {detail && <p className="detail">{detail}</p>}
+        {label && (
+          <button className={`primary ${filled ? "done" : ""}`} onClick={act} disabled={busy}>
+            {busy ? "Preparing…" : filled ? "Form filled ✓ Review it, then submit" : label}
+          </button>
         )}
-      </figcaption>
-      <blockquote className={full ? "" : "clamp"} onClick={() => setFull((f) => !f)} title={full ? "" : "Show full clause"}>
-        “{c.quote}”
-      </blockquote>
-      <LowConfidence c={c} />
-    </figure>
+        {error && <p className="small error">{error}</p>}
+      </div>
+    </div>
   )
 }
 
@@ -810,53 +637,7 @@ function LowConfidence({ c }: { c: Cited<unknown> }) {
   return <span className="confirm">Please double-check this</span>
 }
 
-// ---------- Deadlines ----------
-
-function Deadlines({ tp, clock }: { tp: TrackedPurchase; clock: ClockState }) {
-  const rows = tp.timeline.map((w) => deadlineRow(w, clock))
-  return (
-    <ul className="deadlines">
-      {rows.map((r) => (
-        <li key={r.key} className={r.dim ? "dim" : ""}>
-          <span className={`dot ${r.source}`} aria-hidden="true" />
-          <span className="dl-label">
-            {r.label}
-            {r.sub && <span className="dl-sub">{r.sub}</span>}
-          </span>
-          <span className={`dl-when ${r.urgent ? "urgent" : ""}`}>{r.when}</span>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function deadlineRow(w: TimelineWindow, clock: ClockState) {
-  const left = w.closes_day - clock.day
-  const end = fmtDate(isoDate(clock.base_date, w.closes_day), w.long_term)
-  const isCard = w.source === "card"
-  let label = w.label.split(" (")[0]
-  if (label === "Card extended warranty") label = "Extra warranty from your card"
-  if (label === "Card return protection") label = "Return protection from your card"
-
-  let when: string
-  if (w.status === "claimed") when = label === "Return" ? "Return requested ✓" : "Claim filed ✓"
-  else if (w.status === "closed") when = "Closed"
-  else if (w.open_ended) when = "No time limit"
-  else if (w.long_term) when = `Until ${end}`
-  else when = left === 0 ? "Closes today" : `${plural(left, "day")} left`
-
-  return {
-    key: w.label,
-    label,
-    sub: isCard ? "May cover. Confirm with your issuer." : undefined,
-    when,
-    source: w.source,
-    urgent: w.status === "closing_soon",
-    dim: w.status === "closed"
-  }
-}
-
 // Hooks for e2e/demo_walk.py and e2e/real_policy.py, which drive the panel's actions directly.
-;(window as any).__backpocket = { prepareClaim, readActiveTab, readPolicy, trackPurchase, draftMessage }
+;(window as any).__backpocket = { prepareClaim, readActiveTab, readPolicy, trackPurchase, draftMessage, SITE }
 
 export default SidePanel

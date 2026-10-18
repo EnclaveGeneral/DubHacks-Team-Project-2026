@@ -5,6 +5,9 @@ Add ?fresh=true to /purchases or /cards/{id}/select to skip the extraction cache
 
 import logging
 import os
+import secrets
+import threading
+import time
 from contextlib import asynccontextmanager
 
 import anthropic
@@ -14,7 +17,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from . import cards, clock, db, extract, retailers, tracking
+from . import cards, clock, db, demo_data, extract, retailers, tracking
 from .schemas import (
     Alert,
     CardCatalogEntry,
@@ -65,7 +68,7 @@ app = FastAPI(title="BackPocket service", lifespan=lifespan)
 # CORSMiddleware does not accept wildcards in allow_origins, so use a regex.
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^(chrome-extension://.*|http://localhost:5173)$",
+    allow_origin_regex=r"^(chrome-extension://.*|http://localhost:(5173|5174))$",
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -99,7 +102,9 @@ DEMO_CARD = "northwind-4417"
 
 
 @app.post("/demo/reset", response_model=ClockState)
-def demo_reset():
+def demo_reset(seed: bool = False):
+    """Wipe the demo. With ?seed=true, also add the fictional-store purchases
+    (the extension's and website's Reset do this; the e2e scripts don't)."""
     # Under the purchase lock so an in-flight panel poll can't save a purchase
     # back after the wipe.
     with tracking.lock:
@@ -112,7 +117,17 @@ def demo_reset():
         select_card(DEMO_CARD)  # cached extraction, so this is instant
     except HTTPException:
         pass  # no cache and no API key: shopper picks the card in the panel
-    return clock.set_day(0)
+    state = clock.set_day(0)
+    if seed:
+        demo_data.seed(state.day)
+    return state
+
+
+@app.post("/demo/seed", response_model=list[TrackedPurchase])
+def demo_seed():
+    """Add the fictional-store purchases (Fjord & Pine, Hearthside Home), or
+    put them back to their starting state. Leaves other purchases alone."""
+    return demo_data.seed(clock.get().day)
 
 
 # ---------- Cards ----------
@@ -229,6 +244,15 @@ def list_purchases():
     return tracking.refresh_all(clock.get().day)
 
 
+@app.get("/purchases/{order_id}", response_model=TrackedPurchase)
+def get_purchase(order_id: str):
+    with tracking.lock:
+        tp = tracking.load(order_id)
+        if tp is None:
+            raise HTTPException(404, "unknown order")
+        return tracking.refresh(tp, clock.get().day)
+
+
 @app.get("/state", response_model=PanelState)
 def panel_state():
     """One call for the side panel: refreshes each purchase once (one store
@@ -262,3 +286,46 @@ def mark_claim_filed(order_id: str, body: ClaimFiled):
     if tp is None:
         raise HTTPException(404, "unknown order")
     return tp
+
+
+# ---------- Website -> store form hand-off ----------
+#
+# The website's "Prepare claim form" opens the store's form with a single-use
+# code in the URL; the extension fills the form only if the code redeems. CORS
+# limits who can create codes to the website, the store, and the extension, so
+# an arbitrary page linking to the form can't make the extension fill it.
+
+HANDOFF_TTL_S = 300
+_handoffs: dict[str, tuple[float, str, str]] = {}  # token -> (expires_at, order_id, alert_id)
+_handoffs_lock = threading.Lock()
+
+
+class HandoffRequest(BaseModel):
+    order_id: str
+    alert_id: str
+
+
+@app.post("/handoffs")
+def create_handoff(body: HandoffRequest):
+    day = clock.get().day
+    tp = tracking.load(body.order_id)
+    if tp is None:
+        raise HTTPException(404, "unknown order")
+    if not any(a.id == body.alert_id and a.action for a in tracking.alerts_for(tp, day)):
+        raise HTTPException(409, "There's nothing to prepare for this purchase right now.")
+    token = secrets.token_urlsafe(16)
+    now = time.monotonic()
+    with _handoffs_lock:
+        for t in [t for t, (exp, _, _) in _handoffs.items() if exp < now]:
+            del _handoffs[t]
+        _handoffs[token] = (now + HANDOFF_TTL_S, body.order_id, body.alert_id)
+    return {"token": token}
+
+
+@app.post("/handoffs/{token}/redeem")
+def redeem_handoff(token: str):
+    with _handoffs_lock:
+        entry = _handoffs.pop(token, None)
+    if entry is None or entry[0] < time.monotonic():
+        raise HTTPException(404, "This link has expired or was already used. Start again from BackPocket.")
+    return {"order_id": entry[1], "alert_id": entry[2]}

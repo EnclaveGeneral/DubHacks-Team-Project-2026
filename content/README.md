@@ -5,6 +5,8 @@ Freeze the wording before the demo. The extraction cache, engine tests, fixtures
 | File | Used by |
 | --- | --- |
 | `ridgeline-policy.md` | Mock store `/policy.html` (clauses 3.1 return, 4.2 price adjustment, 6.1 warranty) |
+| `fjord-pine-policy.md` | Fictional second store (seeded demo purchases for the BackPocket website): 45-day returns 3.1, 15-day price adjustment 4.2, 2-year warranty 5.1 |
+| `hearthside-policy.md` | Fictional third store with **no** price adjustments (clause 4.1): 30-day returns 3.1, 1-year warranty 5.1 |
 | `northwind-rewards-visa-4417.md` | Demo card: 3 pts/$1, proportional reversal, +1 year extended warranty |
 | `cascade-cash-visa-9021.md` | Second card: 1.5%, no reversal under $50, 90-day return protection |
 
@@ -27,4 +29,4 @@ Ridgeline is fictional, but its policy is written in the style and structure of 
 
 The two card benefits guides are fictional and written by the team so the demo never misstates a real card's terms.
 
-Still to write: a second store policy with **no** price-match clause (stretch goal).
+Fjord & Pine and Hearthside are fictional too. Their policies are only used to seed demo purchases in `service/app/demo_data.py`, so the website has data beyond Ridgeline; there are no store pages for them.

@@ -866,3 +866,27 @@ button.primary.done {
   margin-top: 2px;
   color: var(--ink-2);
 }
+
+/* Summary view: details live on the website */
+
+.next-deadline {
+  margin: 12px 0 0;
+}
+
+.more-details {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.more-details:hover {
+  text-decoration: underline;
+}
+
+.all-link {
+  margin: 4px 0 16px;
+  text-align: center;
+  font-size: 12px;
+}

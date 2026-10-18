@@ -101,11 +101,13 @@ def main(headed: bool) -> int:
         msg = panel.evaluate("([tp, a, c]) => window.__backpocket.draftMessage(tp, a, c)", [tp, claim, clock])
         check("$8.00" in msg and pm["window_days"]["quote"][:40] in msg, "Drafted message cites the policy")
 
-        # The panel UI for that purchase, with the message drafted.
+        # The panel UI for that purchase. Target has no web form, so the panel
+        # offers to draft the message; the draft itself is written on the
+        # BackPocket website (see e2e/web_walk.py), so we only check the offer.
         panel.bring_to_front()
         panel.reload()
-        panel.get_by_role("button", name="Draft a request message").click()
-        panel.get_by_role("button", name="Copy message").wait_for(timeout=5000)
+        panel.get_by_role("button", name="Draft a request message").wait_for(timeout=10_000)
+        check(True, "Panel offers 'Draft a request message' for a store without a web form")
         shot = Path(tempfile.gettempdir()) / "backpocket-panel-target.png"
         panel.screenshot(path=str(shot), full_page=True)
         print(f"  screenshot: {shot}")
