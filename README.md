@@ -33,7 +33,25 @@ cp .env.example .env   # then paste your ANTHROPIC_API_KEY
 
 On macOS/Linux use `.venv/bin/python` instead of `.venv/Scripts/python`.
 
-## Run the demo (four terminals)
+## Run the demo
+
+From the repo root, one terminal:
+
+```sh
+npm run dev
+```
+
+This starts the store server (8001), the service (8000), the store (5173), and the extension build, with each line of output tagged by process. It keeps them running:
+
+- A process that exits is restarted automatically (with backoff if it keeps crashing).
+- A server that stops answering its health check three times in a row is restarted.
+- A port still held by a process from an earlier run is freed before starting.
+- Ctrl+C stops everything.
+
+While it runs, type a command and press Enter: `r` restarts everything, `r service` (or `store-server`, `store`, `extension`) restarts one, `s` shows status, `q` quits. Each process's output is also saved to `.logs/<name>.log`.
+
+<details>
+<summary>Running the four processes by hand instead</summary>
 
 ```sh
 cd store-server && ../.venv/Scripts/python -m uvicorn main:app --port 8001 --reload
@@ -41,6 +59,8 @@ cd service      && ../.venv/Scripts/python -m uvicorn app.main:app --port 8000 -
 cd store        && npm run dev
 cd extension    && npm run dev
 ```
+
+</details>
 
 Then in Chrome: `chrome://extensions` → Developer mode → **Load unpacked** → `extension/build/chrome-mv3-dev`. Click the BackPocket icon to open the side panel.
 

@@ -1,0 +1,8 @@
+{
+  "name": "backpocket",
+  "private": true,
+  "description": "Runs the BackPocket dev stack. App code lives in store/, store-server/, service/, extension/.",
+  "scripts": {
+    "dev": "node scripts/dev.mjs"
+  }
+}

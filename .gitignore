@@ -21,3 +21,6 @@ extension/build/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Dev runner logs
+.logs/
