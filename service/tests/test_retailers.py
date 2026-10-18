@@ -77,3 +77,12 @@ def test_find_matches_domain_and_subdomains(tmp_path, monkeypatch):
     assert retailers.find("https://help.shop.example/returns")["id"] == "shop"
     assert retailers.find("https://notshop.example/") is None
     assert retailers.find("https://shop.example.evil.com/") is None
+
+
+def test_no_store_price_lookup_for_purchases_without_a_sku(monkeypatch):
+    from app import clock, tracking
+
+    calls = []
+    monkeypatch.setattr(clock.http, "get", lambda url, **kw: calls.append(url))
+    assert tracking._store_price("") is None
+    assert calls == []

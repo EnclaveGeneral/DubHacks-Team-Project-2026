@@ -46,7 +46,12 @@ def save(tp: TrackedPurchase) -> None:
 
 def _store_price(sku: str) -> tuple[int, float] | None:
     """(store's day, price). Keyed by the store's own day so a poll that races
-    a clock change can't file today's price under yesterday."""
+    a clock change can't file today's price under yesterday.
+
+    Purchases added by hand from a real store have no SKU: there's nothing to
+    look up (the shopper reports lower prices themselves), so don't ask."""
+    if not sku:
+        return None
     try:
         r = clock.http.get(f"{clock.store_server_url()}/price/{sku}")
         r.raise_for_status()
