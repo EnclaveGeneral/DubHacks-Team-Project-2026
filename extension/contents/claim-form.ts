@@ -64,7 +64,7 @@ function highlight(el: Fillable) {
   if (el.nextElementSibling?.classList.contains("backpocket-tag")) return
   const tag = document.createElement("span")
   tag.className = "backpocket-tag"
-  tag.textContent = "Filled by BackPocket · check and edit"
+  tag.textContent = "Filled by BackPocket"
   tag.setAttribute("style", "font:12px system-ui,sans-serif;color:#8a6a00;margin-top:2px")
   el.insertAdjacentElement("afterend", tag)
 }

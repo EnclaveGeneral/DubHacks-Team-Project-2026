@@ -1,0 +1,117 @@
+{
+  "id": "gap",
+  "name": "Gap",
+  "domains": [
+    "gap.com"
+  ],
+  "notes": "One-time price adjustment within 14 days of order; promo-code and final-sale purchases excluded.",
+  "ingested_at": "2026-10-18T09:41:18Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.gap.com/customer-service/return-policy-faq?cid=1192370",
+      "status": "ok",
+      "chars": 1244
+    },
+    {
+      "topic": "returns",
+      "url": "https://www.gap.com/customerService/info.do?cid=1192370",
+      "status": "ok",
+      "chars": 1244,
+      "registry_url": "https://www.gap.com/customer-service/return-policy-faq?cid=1192370"
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378",
+      "status": "ok",
+      "chars": 3426
+    }
+  ],
+  "policy": {
+    "merchant": "Gap",
+    "source_url": "https://www.gap.com/customer-service/return-policy-faq?cid=1192370",
+    "return_window_days": {
+      "value": 30,
+      "quote": "30-Day Window for Returns and Exchanges",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.gap.com/customer-service/return-policy-faq?cid=1192370"
+    },
+    "exchange_window_days": {
+      "value": 30,
+      "quote": "30-Day Window for Returns and Exchanges",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.gap.com/customer-service/return-policy-faq?cid=1192370"
+    },
+    "price_match": {
+      "allowed": {
+        "value": true,
+        "quote": "If an item you've purchased has gone down in price, you can request a one-time price adjustment within 14 days of your order date.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378"
+      },
+      "window_days": {
+        "value": 14,
+        "quote": "If an item you've purchased has gone down in price, you can request a one-time price adjustment within 14 days of your order date.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378"
+      },
+      "conditions": [
+        {
+          "value": "One-time adjustment only",
+          "quote": "If an item you've purchased has gone down in price, you can request a one-time price adjustment within 14 days of your order date.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378"
+        },
+        {
+          "value": "Items bought with a promotion code or other discount are not eligible, unless only a free shipping discount was used",
+          "quote": "Items purchased using a promotion code or other discount aren't eligible for a price adjustment unless you used only a free shipping discount.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378"
+        },
+        {
+          "value": "Final sale items are not eligible",
+          "quote": "NOTE: “Final sale” items are not eligible for a price adjustment.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378"
+        },
+        {
+          "value": "Price adjustments for online purchases cannot be made in a store",
+          "quote": "NOTE: Price adjustments for online purchases cannot be made in a store.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378"
+        }
+      ]
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "contact us",
+      "quote": "Within 14 days of your order, contact us.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.gap.com/customer-service/getting-a-price-adjustment?cid=1192378"
+    },
+    "retailer_id": "gap"
+  }
+}

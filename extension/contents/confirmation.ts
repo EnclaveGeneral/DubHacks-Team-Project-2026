@@ -1,7 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 
-import { trackPurchase } from "~lib/api"
-import { purchaseFromJsonLd } from "~lib/orders"
+import { getClock, trackPurchase } from "~lib/api"
+import { dayOf, orderDateFromJsonLd, purchaseFromJsonLd } from "~lib/orders"
 import { extractPolicyText } from "~lib/policy"
 
 export const config: PlasmoCSConfig = {
@@ -56,7 +56,15 @@ function render() {
       const res = await fetch(purchase.policy_url)
       const policyText = extractPolicyText(await res.text())
       if (!policyText) throw new Error("No policy text found on the policy page.")
-      await trackPurchase(purchase, policyText)
+      // Date the purchase by the order itself, not by whatever day it is when
+      // the shopper turns on protection.
+      const orderDate = orderDateFromJsonLd(document)
+      if (orderDate) {
+        const { base_date } = await getClock()
+        await trackPurchase({ ...purchase, purchase_day: dayOf(base_date, orderDate) }, policyText, true)
+      } else {
+        await trackPurchase(purchase, policyText)
+      }
       status.textContent = "Protected. See the BackPocket panel."
     } catch (e) {
       status.textContent = `Couldn't protect this purchase: ${(e as Error).message}`

@@ -25,6 +25,7 @@ class Cited(BaseModel, Generic[T]):
     quote: str | None = None
     clause: str | None = None
     confidence: Confidence = "high"
+    source_url: str | None = None  # page the quote came from, when terms span several pages
 
 
 # ---------- Merchant policy ----------
@@ -43,8 +44,10 @@ class MerchantPolicy(BaseModel):
     exchange_window_days: Cited[int]
     price_match: PriceMatch
     manufacturer_warranty_months: Cited[int]
+    returns_unlimited: Cited[bool] = Cited()  # "no time limit for returns" (return_window_days is then null)
     claim_form_url: str  # "" when the store has no web form (claims go by chat, phone, or email)
     how_to_request: Cited[str] = Cited()  # e.g. "chat online or call 1-800-..."
+    retailer_id: str | None = None  # set when the policy comes from the ingested retailer dataset
 
 
 # ---------- Card benefits ----------
@@ -96,8 +99,9 @@ class Purchase(BaseModel):
 
 class NewPurchaseRequest(BaseModel):
     purchase: Purchase
-    policy_text: str  # cleaned by the extension
+    policy_text: str = ""  # cleaned by the extension; not needed when retailer_id is set
     manual: bool = False  # entered by the shopper: keep their purchase_day instead of "today"
+    retailer_id: str | None = None  # use this retailer's ingested policy instead of policy_text
 
 
 class ReadPolicyRequest(BaseModel):
@@ -123,6 +127,7 @@ class TimelineWindow(BaseModel):
     closes_day: int
     status: WindowStatus
     long_term: bool = False  # true for warranty windows (shown in the separate row)
+    open_ended: bool = False  # no closing date (e.g. returns with no time limit)
     citation: Cited[str | int | float | bool]
 
 

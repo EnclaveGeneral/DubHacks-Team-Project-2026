@@ -1,0 +1,138 @@
+{
+  "id": "nordstrom",
+  "name": "Nordstrom",
+  "domains": [
+    "nordstrom.com"
+  ],
+  "notes": "Price adjustment on full-price items within 10 days of purchase/shipment; no competitor price matching.",
+  "ingested_at": "2026-10-18T09:40:55Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.nordstrom.com/browse/services/return-policy",
+      "status": "ok",
+      "chars": 10507
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy",
+      "status": "ok",
+      "chars": 1192
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy?breadcrumb=Home%2FCustomer%20Service%2FNordstrom%20Policies%2FPricing%20Policy",
+      "status": "ok",
+      "chars": 1192,
+      "registry_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+    }
+  ],
+  "policy": {
+    "merchant": "Nordstrom",
+    "source_url": "https://www.nordstrom.com/browse/services/return-policy",
+    "return_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "exchange_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "price_match": {
+      "allowed": {
+        "value": true,
+        "quote": "If we lower the price of an item you've already purchased from us at full price and we still have the same color and size available, we will adjust the price at your request within 10 days of your in-store purchase or shipment date.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+      },
+      "window_days": {
+        "value": 10,
+        "quote": "If we lower the price of an item you've already purchased from us at full price and we still have the same color and size available, we will adjust the price at your request within 10 days of your in-store purchase or shipment date.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+      },
+      "conditions": [
+        {
+          "value": "Item must have been purchased at full price and the same color and size must still be available",
+          "quote": "If we lower the price of an item you've already purchased from us at full price and we still have the same color and size available, we will adjust the price at your request within 10 days of your in-store purchase or shipment date.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+        },
+        {
+          "value": "Request must be made within 10 days of in-store purchase or shipment date",
+          "quote": "If we lower the price of an item you've already purchased from us at full price and we still have the same color and size available, we will adjust the price at your request within 10 days of your in-store purchase or shipment date.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+        },
+        {
+          "value": "Items originally purchased on sale are not eligible",
+          "quote": "Price adjustments are not eligible for items originally purchased on sale.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+        },
+        {
+          "value": "Only one price adjustment per item",
+          "quote": "Only one price adjustment per item is allowed.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+        },
+        {
+          "value": "Items purchased from third-party sellers or Nordstrom Marketplace are not eligible",
+          "quote": "Price adjustments are not eligible for items purchased from third-party sellers or Nordstrom Marketplace.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+        },
+        {
+          "value": "Automated price adjustment requests from third-party services are not accepted",
+          "quote": "We do not accept automated price adjustment requests from third-party services.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+        },
+        {
+          "value": "Applies only to the store's own price drops; no price matching of other retailers",
+          "quote": "We stand behind our everyday pricing, so we don't price match other retailers.",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.nordstrom.com/browse/customer-service/policy/pricing-policy"
+        }
+      ]
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": true,
+      "quote": "There are no time limits for returns or exchanges.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.nordstrom.com/browse/services/return-policy"
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "start your return online",
+      "quote": "Start your return online.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.nordstrom.com/browse/services/return-policy"
+    },
+    "retailer_id": "nordstrom"
+  }
+}

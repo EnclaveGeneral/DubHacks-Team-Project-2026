@@ -52,8 +52,8 @@ export function actionable(alerts: Alert[], orderId: string): Alert[] {
 }
 
 export function pointsPhrase(lost: number): string {
-  if (lost > 0) return `after ${lost} points are taken back`
-  if (lost < 0) return `and earn about ${-lost} more points`
+  if (lost > 0) return ` after losing ${lost} points`
+  if (lost < 0) return `, and you'd earn about ${-lost} more points`
   return ""
 }
 
@@ -89,6 +89,7 @@ export function deadlineRow(w: TimelineWindow, clock: ClockState) {
   let when: string
   if (w.status === "claimed") when = label === "Return" ? "Return requested ✓" : "Claim filed ✓"
   else if (w.status === "closed") when = "Closed"
+  else if (w.open_ended) when = "No time limit"
   else if (w.long_term) when = `Until ${end}`
   else when = left === 0 ? "Closes today" : `${plural(left, "day")} left`
 

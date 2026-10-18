@@ -1,0 +1,81 @@
+{
+  "id": "amazon",
+  "name": "Amazon",
+  "domains": [
+    "amazon.com"
+  ],
+  "notes": "No price matching or post-purchase price adjustment; only a Pre-order Price Guarantee (nodeId=G4BRP7LCB9DSDNCR) for unreleased items.",
+  "ingested_at": "2026-10-18T09:39:42Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GKM69DUUYKQWKWX7",
+      "status": "ok",
+      "chars": 11596
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=G9EAYKPV5YYDB8P7",
+      "status": "ok",
+      "chars": 1269
+    }
+  ],
+  "policy": {
+    "merchant": "Amazon",
+    "source_url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GKM69DUUYKQWKWX7",
+    "return_window_days": {
+      "value": 30,
+      "quote": "Most items can be returned for a refund or replacement/exchange within 30 days of delivery as long as they are in original or unused condition.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GKM69DUUYKQWKWX7"
+    },
+    "exchange_window_days": {
+      "value": 30,
+      "quote": "Most items can be returned for a refund or replacement/exchange within 30 days of delivery as long as they are in original or unused condition.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GKM69DUUYKQWKWX7"
+    },
+    "price_match": {
+      "allowed": {
+        "value": false,
+        "quote": "As a result, we don't offer price matching compensation.",
+        "clause": null,
+        "confidence": "low",
+        "source_url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=G9EAYKPV5YYDB8P7"
+      },
+      "window_days": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "conditions": []
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "go to Your Orders and click the \"Return Items\" button next to the item",
+      "quote": "To initiate a return on an item that's eligible for return, simply go to Your Orders and click on \"Return Items\" button next to the item.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.amazon.com/gp/help/customer/display.html?nodeId=GKM69DUUYKQWKWX7"
+    },
+    "retailer_id": "amazon"
+  }
+}

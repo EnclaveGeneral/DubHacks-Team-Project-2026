@@ -1,0 +1,75 @@
+{
+  "id": "burlington",
+  "name": "Burlington",
+  "domains": [
+    "burlington.com"
+  ],
+  "notes": "No price adjustment or price match policy found (Pricing Policy page only explains comparable-value labels).",
+  "ingested_at": "2026-10-18T09:41:33Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.burlington.com/helpcenter/return-policy",
+      "status": "ok",
+      "chars": 1220
+    }
+  ],
+  "policy": {
+    "merchant": "Burlington",
+    "source_url": "https://www.burlington.com/helpcenter/return-policy",
+    "return_window_days": {
+      "value": 30,
+      "quote": "All items must be returned within 30 days of purchase.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.burlington.com/helpcenter/return-policy"
+    },
+    "exchange_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "price_match": {
+      "allowed": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "window_days": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "conditions": []
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "bring your original receipt (in store)",
+      "quote": "Please bring your original receipt.",
+      "clause": null,
+      "confidence": "low",
+      "source_url": "https://www.burlington.com/helpcenter/return-policy"
+    },
+    "retailer_id": "burlington"
+  }
+}

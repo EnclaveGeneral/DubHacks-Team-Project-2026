@@ -1,0 +1,25 @@
+{
+  "id": "tjmaxx",
+  "name": "T.J. Maxx (TJX Companies)",
+  "domains": [
+    "tjmaxx.tjx.com",
+    "tjmaxx.com"
+  ],
+  "notes": "No price adjustments on previously purchased markdowns (stated in FAQ); online-order returns page is .../return-policy-for-items-purchased-online/2400118.",
+  "ingested_at": "2026-10-18T09:45:54Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://tjmaxx.tjx.com/store/jump/topic/return-policy-for-items-purchased-in-stores/18400007p",
+      "status": "too_short",
+      "chars": 86
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://tjmaxx.tjx.com/store/jump/topic/FAQs/23900001p",
+      "status": "too_short",
+      "chars": 86
+    }
+  ],
+  "policy": null
+}

@@ -1,0 +1,24 @@
+{
+  "id": "dicks",
+  "name": "DICK'S Sporting Goods",
+  "domains": [
+    "dickssportinggoods.com"
+  ],
+  "notes": "Price Match Policy covers qualifying competitors; whether it covers DICK'S own post-purchase drops not confirmed.",
+  "ingested_at": "2026-10-18T09:46:02Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.dickssportinggoods.com/s/return-policy",
+      "status": "too_short",
+      "chars": 225
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.dickssportinggoods.com/s/policy/price-match-policy",
+      "status": "blocked",
+      "chars": 225
+    }
+  ],
+  "policy": null
+}

@@ -1,0 +1,103 @@
+{
+  "id": "macys",
+  "name": "Macy's",
+  "domains": [
+    "macys.com"
+  ],
+  "notes": "Price adjustment if a Macy's advertised price drops within 10 days of order.",
+  "ingested_at": "2026-10-18T09:46:02Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.macys.com/customer-service/articles/what-is-macys-return-policy",
+      "status": "ok",
+      "chars": 1031
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.macys.com/customer-service/articles/how-can-i-get-a-price-adjustment",
+      "status": "ok",
+      "chars": 626
+    }
+  ],
+  "policy": {
+    "merchant": "Macy's",
+    "source_url": "https://www.macys.com/customer-service/articles/what-is-macys-return-policy",
+    "return_window_days": {
+      "value": 30,
+      "quote": "If you’re not completely satisfied, most items can be returned within 30 days of delivery or purchase.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.macys.com/customer-service/articles/what-is-macys-return-policy"
+    },
+    "exchange_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "price_match": {
+      "allowed": {
+        "value": true,
+        "quote": "If the price of your item drops within 10 days of your order date, you can request a price adjustment and receive a refund of the difference.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.macys.com/customer-service/articles/how-can-i-get-a-price-adjustment"
+      },
+      "window_days": {
+        "value": 10,
+        "quote": "Requests must be made within 10 days of the order date",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.macys.com/customer-service/articles/how-can-i-get-a-price-adjustment"
+      },
+      "conditions": [
+        {
+          "value": "The lower price must be an advertised Macy's price",
+          "quote": "The lower price must be an advertised Macy’s price",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.macys.com/customer-service/articles/how-can-i-get-a-price-adjustment"
+        },
+        {
+          "value": "Request must be made within 10 days of the order date",
+          "quote": "Requests must be made within 10 days of the order date",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.macys.com/customer-service/articles/how-can-i-get-a-price-adjustment"
+        },
+        {
+          "value": "Cannot be combined with promotional discounts",
+          "quote": "Promotional discounts cannot be combined with a price adjustment",
+          "clause": null,
+          "confidence": "high",
+          "source_url": "https://www.macys.com/customer-service/articles/how-can-i-get-a-price-adjustment"
+        }
+      ]
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "return in store or by mail",
+      "quote": "Items purchased online can be returned in store or by mail",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.macys.com/customer-service/articles/what-is-macys-return-policy"
+    },
+    "retailer_id": "macys"
+  }
+}

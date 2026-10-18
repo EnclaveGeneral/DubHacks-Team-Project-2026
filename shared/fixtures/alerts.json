@@ -2,7 +2,7 @@
   "0": [],
   "3": [
     {
-      "id": "pm-RO-10482-d3",
+      "id": "pm-RO-10482-p110",
       "purchase_id": "RO-10482",
       "kind": "price_drop_claimable",
       "title": "Price dropped $30",
@@ -18,13 +18,15 @@
           "value": 14,
           "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
           "clause": "4.2",
-          "confidence": "high"
+          "confidence": "high",
+          "source_url": null
         },
         {
           "value": "proportional",
           "quote": "When a purchase is refunded, in full or in part, including any price adjustment, points earned on the refunded amount are deducted from your balance in proportion to the amount refunded.",
           "clause": "§1.3",
-          "confidence": "high"
+          "confidence": "high",
+          "source_url": null
         }
       ],
       "action": "prepare_claim",
@@ -49,19 +51,22 @@
           "value": 30,
           "quote": "Merchandise that is unworn, unwashed, and in new condition with original tags attached may be returned within 30 days of the purchase date for a refund to the original form of payment.",
           "clause": "3.1",
-          "confidence": "high"
+          "confidence": "high",
+          "source_url": null
         },
         {
           "value": 14,
           "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
           "clause": "4.2",
-          "confidence": "high"
+          "confidence": "high",
+          "source_url": null
         },
         {
           "value": "proportional",
           "quote": "When a purchase is refunded, in full or in part, including any price adjustment, points earned on the refunded amount are deducted from your balance in proportion to the amount refunded.",
           "clause": "§1.3",
-          "confidence": "high"
+          "confidence": "high",
+          "source_url": null
         }
       ],
       "action": "prepare_return",
@@ -86,19 +91,22 @@
           "value": 30,
           "quote": "Merchandise that is unworn, unwashed, and in new condition with original tags attached may be returned within 30 days of the purchase date for a refund to the original form of payment.",
           "clause": "3.1",
-          "confidence": "high"
+          "confidence": "high",
+          "source_url": null
         },
         {
           "value": 14,
           "quote": "If an item you purchased from Ridgeline Outfitters is offered by us at a lower price, a one-time price adjustment may be requested within 14 days after the purchase date.",
           "clause": "4.2",
-          "confidence": "high"
+          "confidence": "high",
+          "source_url": null
         },
         {
           "value": "proportional",
           "quote": "When a purchase is refunded, in full or in part, including any price adjustment, points earned on the refunded amount are deducted from your balance in proportion to the amount refunded.",
           "clause": "§1.3",
-          "confidence": "high"
+          "confidence": "high",
+          "source_url": null
         }
       ],
       "action": "prepare_return",

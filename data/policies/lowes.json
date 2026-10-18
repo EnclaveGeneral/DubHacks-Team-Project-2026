@@ -1,0 +1,24 @@
+{
+  "id": "lowes",
+  "name": "Lowe's",
+  "domains": [
+    "lowes.com"
+  ],
+  "notes": "Lowest Price Guarantee matches competitor prices at time of purchase; unclear whether it covers Lowe's own post-purchase price drops.",
+  "ingested_at": "2026-10-18T09:45:54Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.lowes.com/l/help/returns-policy",
+      "status": "blocked",
+      "chars": 216
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.lowes.com/l/about/lowest-price-guarantee",
+      "status": "blocked",
+      "chars": 225
+    }
+  ],
+  "policy": null
+}

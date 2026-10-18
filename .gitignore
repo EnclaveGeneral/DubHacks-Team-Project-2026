@@ -27,3 +27,6 @@ Thumbs.db
 
 # Dev runner logs
 .logs/
+
+# Rendered retailer policy pages (rebuilt by service/ingest.py)
+data/policies/raw/

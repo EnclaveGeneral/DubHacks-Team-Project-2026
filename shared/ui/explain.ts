@@ -19,39 +19,39 @@ export function explainAlert(alert: Alert, tp: TrackedPurchase, clock: ClockStat
   const returnLeft = ret ? Math.max(0, ret.closes_day - clock.day) : null
   const pending = alert.body.includes("pending")
 
+  // What the shopper ends up with, after card points are taken back.
+  const outcome = (mm: NonNullable<typeof m>, verb: "get" | "save") =>
+    `You'd ${verb} about ${usd(mm.net_estimate)}${verb === "get" ? " back" : ""}${pointsPhrase(mm.points_reversed)}.`
+  const pendingNote = pending ? " Assumes your pending adjustment is approved." : ""
+
   let detail: string | null = null
   let steps: string[] = []
-  let result: string | null = null
   if (alert.kind === "price_drop_claimable") {
     const left = pm ? Math.max(0, pm.closes_day - clock.day) : null
-    detail =
-      (left !== null ? `${plural(left, "day")} left to claim. ` : "") +
-      (m ? `About ${usd(m.net_estimate)} back ${pointsPhrase(m.points_reversed)} (estimate).` : "")
+    detail = [left !== null && `${plural(left, "day")} left to claim.`, m && outcome(m, "get")].filter(Boolean).join(" ")
   } else if (alert.kind === "return_rebuy" && m) {
-    // First sentence of the engine's explanation: why no price adjustment.
-    detail = alert.body.split(/(?<=\.)\s/)[0]
+    const why = tp.claims_filed.includes("price_match")
+      ? "You've used your one price adjustment"
+      : pm
+        ? `Price adjustments end after ${pm.closes_day - pm.opens_day} days`
+        : "This store doesn't adjust prices"
+    detail = `${why}, but you can still return it. ${outcome(m, "save")}${pendingNote}`
     const current = currentPrice(tp, clock.day)
-    steps = [
-      `Buy it again at ${usd(current)}.`,
-      `Return the original for a ${usd(current + m.refund)} refund` +
-        (returnLeft !== null ? (returnLeft === 0 ? " by today." : ` within ${plural(returnLeft, "day")}.`) : ".")
-    ]
-    result = `You come out about ${usd(m.net_estimate)} ahead ${pointsPhrase(m.points_reversed)} (estimate).`
+    const by =
+      ret?.open_ended || returnLeft === null ? "" : returnLeft === 0 ? " today" : ` within ${plural(returnLeft, "day")}`
+    steps = [`Buy it again at ${usd(current)}.`, `Return the original${by} for ${usd(current + m.refund)}.`]
   } else if (alert.kind === "window_closing" && m) {
     detail =
-      `Returning refunds ${usd(m.refund)}` +
-      (m.points_reversed ? ` and takes back about ${m.points_reversed} points (estimate)` : "") +
-      "."
+      `Refunds ${usd(m.refund)}` +
+      (m.points_reversed ? `, takes back about ${m.points_reversed} points` : "") +
+      "." +
+      pendingNote
   } else if (alert.kind === "card_protection") {
     detail = alert.body
   }
 
-  const notes = [
-    pending && alert.kind !== "card_protection" && "Assumes your pending price adjustment is approved.",
-    alert.kind === "return_rebuy" && "Check that the new order isn't marked Final Sale."
-  ].filter((n): n is string => Boolean(n))
-
-  return { detail, steps, result, notes }
+  // The outcome and any pending-adjustment note are part of `detail` now.
+  return { detail, steps, result: null, notes: [] }
 }
 
 /** Label of the alert's main button, or null when it has no action. */

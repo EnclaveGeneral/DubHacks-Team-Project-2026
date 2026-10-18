@@ -1,0 +1,81 @@
+{
+  "id": "kohls",
+  "name": "Kohl's",
+  "domains": [
+    "kohls.com"
+  ],
+  "notes": "Price adjustment if price drops within 14 days of purchase (clearance/BOGO excluded).",
+  "ingested_at": "2026-10-18T09:46:02Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.kohls.com/faq/article/893",
+      "status": "ok",
+      "chars": 12715
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.kohls.com/faq/article/88",
+      "status": "blocked",
+      "chars": 209
+    }
+  ],
+  "policy": {
+    "merchant": "Kohl's",
+    "source_url": "https://www.kohls.com/faq/article/893",
+    "return_window_days": {
+      "value": 90,
+      "quote": "Most Kohl’s merchandise can be returned up to 90 days from the date of purchase.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.kohls.com/faq/article/893"
+    },
+    "exchange_window_days": {
+      "value": 90,
+      "quote": "Most items are eligible for in-store exchanges within the applicable return window.",
+      "clause": null,
+      "confidence": "low",
+      "source_url": "https://www.kohls.com/faq/article/893"
+    },
+    "price_match": {
+      "allowed": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "window_days": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "conditions": []
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "return in-store at any Kohl's location or by mail",
+      "quote": "Returns can be made in-store at any Kohl’s location or by mail (if applicable).",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.kohls.com/faq/article/893"
+    },
+    "retailer_id": "kohls"
+  }
+}

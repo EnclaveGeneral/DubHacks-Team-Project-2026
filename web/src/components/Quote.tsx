@@ -19,7 +19,15 @@ export default function Quote({ c, policyUrl }: { c: Cited<unknown>; policyUrl?:
   if (!c.quote) return null
   const isCard = c.clause?.startsWith('§')
   const source = isCard ? 'Card benefits guide' : 'Store policy'
-  const href = !isCard && c.clause && linkable(policyUrl) ? `${policyUrl}#clause-${c.clause}` : undefined
+  // A quote from a multi-page retailer policy links to its own page; otherwise
+  // link to the clause on the purchase's policy page.
+  const href = isCard
+    ? undefined
+    : c.source_url && linkable(c.source_url)
+      ? c.source_url
+      : c.clause && linkable(policyUrl)
+        ? `${policyUrl}#clause-${c.clause}`
+        : undefined
   return (
     <figure className="quote">
       <figcaption>

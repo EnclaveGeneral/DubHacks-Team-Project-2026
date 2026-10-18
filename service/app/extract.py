@@ -97,6 +97,7 @@ class PolicyExtraction(BaseModel):
     merchant_name: str | None
     how_to_request: Cited[str]
     return_window_days: Cited[int]
+    return_window_unlimited: Cited[bool]
     exchange_window_days: Cited[int]
     price_match_allowed: Cited[bool]
     price_match_window_days: Cited[int]
@@ -124,6 +125,8 @@ POLICY_TASK = """Extract the store's post-purchase terms:
 - merchant_name: the store's name as the document uses it, or null.
 - how_to_request: how a shopper who bought online asks for a price adjustment (or, if none is described, a return): the channel and contact details in a few words, for example "chat online or call 1-800-555-0100" or "submit the online request form". If the document only describes in-store requests, give that. The value must come from the quoted sentence alone.
 - return_window_days: days after purchase that a return is accepted.
+- return_window_unlimited: true if the document says general returns have no time \
+limit; otherwise null.
 - exchange_window_days: days after purchase that an exchange is accepted.
 - price_match_allowed: true if the store adjusts the price when its own price \
 drops after purchase; false if the document says it does not; null if not mentioned.
@@ -193,20 +196,80 @@ def _cached(kind: str, task: str, text: str, fresh: bool, run):
     return data
 
 
-def merchant_policy(
-    text: str,
-    merchant: str | None,
-    source_url: str,
-    claim_form_url: str,
-    fresh: bool = False,
-) -> MerchantPolicy:
+def _cited_fields(obj: BaseModel):
+    for name in type(obj).model_fields:
+        val = getattr(obj, name)
+        if isinstance(val, Cited):
+            yield val
+        elif isinstance(val, list):
+            yield from (v for v in val if isinstance(v, Cited))
+
+
+def policy_page(text: str, source_url: str, fresh: bool = False) -> PolicyExtraction:
+    """Extract one policy page. Every field records the page it came from."""
+
     def run():
-        ext = _call(POLICY_TASK, text, PolicyExtraction)
-        return ext.model_dump()
+        return _call(POLICY_TASK, text, PolicyExtraction).model_dump()
 
     ext = PolicyExtraction.model_validate(_cached("policy", POLICY_TASK, text, fresh, run))
     _verify_all(ext, normalize(text))
+    for c in _cited_fields(ext):
+        if c.value is not None:
+            c.source_url = source_url
+    return ext
+
+
+# Which page topics to trust first for each field, when a store's terms are
+# spread over several pages (returns page, price adjustment page, warranty page).
+FIELD_TOPICS = {
+    "return_window_days": ["returns", "price_adjustment", "warranty"],
+    "return_window_unlimited": ["returns", "price_adjustment", "warranty"],
+    "exchange_window_days": ["returns", "price_adjustment", "warranty"],
+    "price_match_allowed": ["price_adjustment", "returns", "warranty"],
+    "price_match_window_days": ["price_adjustment", "returns", "warranty"],
+    "manufacturer_warranty_months": ["warranty", "returns", "price_adjustment"],
+    "how_to_request": ["price_adjustment", "returns", "warranty"],
+}
+
+
+def _pick(field: str, pages: list[tuple[str, PolicyExtraction]]) -> tuple[Cited, PolicyExtraction | None]:
+    """Best value for `field`: a verified quote from the most relevant page,
+    else any stated value, else null."""
+    order = FIELD_TOPICS[field]
+    ranked = sorted(pages, key=lambda tp: order.index(tp[0]) if tp[0] in order else len(order))
+    stated = [(getattr(ext, field), ext) for _, ext in ranked if getattr(ext, field).value is not None]
+    for c, ext in stated:
+        if c.confidence == "high":
+            return c, ext
+    return stated[0] if stated else (Cited(), None)
+
+
+def merge_pages(pages: list[tuple[str, PolicyExtraction]]) -> PolicyExtraction:
+    """Combine extractions of several pages of one store's policy, field by field."""
+    if len(pages) == 1:
+        return pages[0][1]
+    picked = {f: _pick(f, pages) for f in FIELD_TOPICS}
+    # Conditions come from the same page as the price adjustment window, so they
+    # describe the same policy.
+    _, pm_page = picked["price_match_window_days"]
+    if pm_page is None:
+        _, pm_page = picked["price_match_allowed"]
+    return PolicyExtraction(
+        merchant_name=next((e.merchant_name for _, e in pages if e.merchant_name), None),
+        **{f: c for f, (c, _) in picked.items()},
+        price_match_conditions=pm_page.price_match_conditions if pm_page else [],
+    )
+
+
+def to_merchant_policy(
+    ext: PolicyExtraction,
+    merchant: str | None,
+    source_url: str,
+    claim_form_url: str,
+    retailer_id: str | None = None,
+) -> MerchantPolicy:
     return MerchantPolicy(
+        retailer_id=retailer_id,
         merchant=merchant or ext.merchant_name or "This store",
         source_url=source_url,
         how_to_request=ext.how_to_request,
@@ -218,8 +281,20 @@ def merchant_policy(
             conditions=ext.price_match_conditions,
         ),
         manufacturer_warranty_months=ext.manufacturer_warranty_months,
+        returns_unlimited=ext.return_window_unlimited,
         claim_form_url=claim_form_url,
     )
+
+
+def merchant_policy(
+    text: str,
+    merchant: str | None,
+    source_url: str,
+    claim_form_url: str,
+    fresh: bool = False,
+) -> MerchantPolicy:
+    """Policy from a single page of text."""
+    return to_merchant_policy(policy_page(text, source_url, fresh), merchant, source_url, claim_form_url)
 
 
 def _card_clause(field: Cited) -> Cited:

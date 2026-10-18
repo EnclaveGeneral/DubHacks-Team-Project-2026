@@ -855,9 +855,16 @@ button.primary:disabled {
   margin: 2px 0;
 }
 
-.result {
-  margin: 6px 0 0;
-  font-weight: 600;
+button.primary.done {
+  background: transparent;
+  color: var(--good);
+  box-shadow: inset 0 0 0 1.5px var(--good);
+}
+
+.source-link {
+  display: inline-block;
+  margin-top: 2px;
+  color: var(--ink-2);
 }
 
 /* Summary view: details live on the website */

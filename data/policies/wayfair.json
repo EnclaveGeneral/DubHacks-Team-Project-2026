@@ -1,0 +1,18 @@
+{
+  "id": "wayfair",
+  "name": "Wayfair",
+  "domains": [
+    "wayfair.com"
+  ],
+  "notes": "No published price adjustment or price match policy found.",
+  "ingested_at": "2026-10-18T09:46:02Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.wayfair.com/help/answer/20/what-is-your-return-policy",
+      "status": "blocked",
+      "chars": 128
+    }
+  ],
+  "policy": null
+}

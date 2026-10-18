@@ -335,6 +335,8 @@ function PolicySheet({
 }) {
   const [adding, setAdding] = useState(false)
   const pm = policy.price_match
+  // A stored retailer policy covers several pages, so "not on this page" would mislead.
+  const missing = policy.retailer_id ? "Not stated" : "Not on this page"
   const months = policy.manufacturer_warranty_months.value
 
   const terms: { label: string; value: string; cite: Cited<unknown> }[] = [
@@ -352,12 +354,20 @@ function PolicySheet({
     },
     {
       label: "Returns",
-      value: policy.return_window_days.value != null ? `Within ${policy.return_window_days.value} days` : "Not on this page",
-      cite: policy.return_window_days
+      value:
+        policy.return_window_days.value != null
+          ? `Within ${policy.return_window_days.value} days`
+          : policy.returns_unlimited?.value
+            ? "No time limit"
+            : missing,
+      cite:
+        policy.return_window_days.value == null && policy.returns_unlimited?.value
+          ? policy.returns_unlimited
+          : policy.return_window_days
     },
     {
       label: "Warranty",
-      value: months != null ? (months % 12 === 0 ? `${months / 12} year${months === 12 ? "" : "s"}` : `${months} months`) : "Not on this page",
+      value: months != null ? (months % 12 === 0 ? `${months / 12} year${months === 12 ? "" : "s"}` : `${months} months`) : missing,
       cite: policy.manufacturer_warranty_months
     },
     {
@@ -371,7 +381,9 @@ function PolicySheet({
     <section className="sheet policy-sheet">
       <div className="sheet-head">
         <div>
-          <p className="eyebrow">What this page says</p>
+          <p className="eyebrow">
+            {policy.retailer_id ? `From ${policy.merchant}'s policy pages` : "What this page says"}
+          </p>
           <h2>{policy.merchant}</h2>
         </div>
         <button className="link small" onClick={onClose}>
@@ -413,6 +425,17 @@ function PolicySheet({
   )
 }
 
+// "https://www.nordstrom.com/browse/customer-service/price-adjustments" -> "price adjustments page"
+function pageName(url: string): string {
+  try {
+    const last = new URL(url).pathname.split("/").filter(Boolean).pop() ?? ""
+    const words = decodeURIComponent(last).replace(/\.[a-z]+$/i, "").replace(/[-_]+/g, " ").trim()
+    return words && !/^\d+$/.test(words) ? `${words.toLowerCase()} page` : "source page"
+  } catch {
+    return "source page"
+  }
+}
+
 function SmallQuote({ c }: { c: Cited<unknown> }) {
   const [open, setOpen] = useState(false)
   return (
@@ -421,6 +444,11 @@ function SmallQuote({ c }: { c: Cited<unknown> }) {
         {open ? "Hide wording" : "See wording"}
       </button>
       {open && <q>{c.quote}</q>}
+      {open && c.source_url && (
+        <a className="small source-link" href={c.source_url} target="_blank" rel="noreferrer">
+          {pageName(c.source_url)}
+        </a>
+      )}
     </span>
   )
 }
@@ -465,11 +493,12 @@ function AddPurchaseForm({
           price_paid: paid,
           card_last4: cardLast4,
           purchase_day: dayFromIso(clock.base_date, date),
-          policy_url: page.url,
+          policy_url: policy.retailer_id ? policy.source_url : page.url,
           claim_form_url: ""
         },
-        page.text,
-        true
+        policy.retailer_id ? "" : page.text,
+        true,
+        policy.retailer_id ?? null
       )
       onDone()
     } catch (e) {
@@ -551,7 +580,8 @@ function PurchaseSummary({ tp, clock, alerts }: { tp: TrackedPurchase; clock: Cl
 // ---------- Alerts ----------
 
 function AlertSummary({ alert, tp, clock }: { alert: Alert; tp: TrackedPurchase; clock: ClockState }) {
-  const [state, setState] = useState<{ text: string; ok: boolean } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [filled, setFilled] = useState(false)
   const [busy, setBusy] = useState(false)
   const { detail } = explainAlert(alert, tp, clock)
   const tone = alertTone(alert)
@@ -565,19 +595,12 @@ function AlertSummary({ alert, tp, clock }: { alert: Alert; tp: TrackedPurchase;
       return
     }
     setBusy(true)
-    setState({ text: "Opening the store's form…", ok: true })
+    setError(null)
     try {
-      const r = await prepareClaim(tp, alert, clock)
-      const left = r.failed.length + r.unfilled.length
-      setState({
-        text:
-          `Filled ${plural(r.filled.length, "field")} on the store's form` +
-          (left ? `, ${left} left for you` : "") +
-          ". Check the highlighted fields, then submit it yourself.",
-        ok: true
-      })
+      await prepareClaim(tp, alert, clock)
+      setFilled(true)
     } catch (e) {
-      setState({ text: `Couldn't prepare the form: ${(e as Error).message}`, ok: false })
+      setError(`Couldn't prepare the form: ${(e as Error).message}`)
     } finally {
       setBusy(false)
     }
@@ -594,11 +617,11 @@ function AlertSummary({ alert, tp, clock }: { alert: Alert; tp: TrackedPurchase;
       <div className="alert-body">
         {detail && <p className="detail">{detail}</p>}
         {label && (
-          <button className="primary" onClick={act} disabled={busy}>
-            {busy ? "Preparing…" : label}
+          <button className={`primary ${filled ? "done" : ""}`} onClick={act} disabled={busy}>
+            {busy ? "Preparing…" : filled ? "Form filled ✓ Review it, then submit" : label}
           </button>
         )}
-        {state && <p className={`small ${state.ok ? "muted" : "error"}`}>{state.text}</p>}
+        {error && <p className="small error">{error}</p>}
       </div>
     </div>
   )

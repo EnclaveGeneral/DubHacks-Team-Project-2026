@@ -150,3 +150,29 @@ def test_threshold_reversal_rule():
     card.reversal_threshold_dollars = Cited(value=50.0)
     assert engine.points_reversed(30, 140, card) == 0
     assert engine.points_reversed(140, 140, card) == 420
+
+
+def test_returns_with_no_time_limit_keep_rebuy_open():
+    policy = POLICY.model_copy(deep=True)
+    policy.return_window_days = Cited()
+    policy.returns_unlimited = Cited(value=True, quote="There are no time limits for returns.")
+    [a] = [a for a in engine.alerts(PURCHASE, policy, CARD, 60, {0: 140.0, 60: 95.0}, [])
+           if a.kind != "card_protection"]
+    assert a.kind == "return_rebuy" and "Returns have no time limit." in a.body
+    assert a.citations[0].quote == "There are no time limits for returns."
+    tl = engine.timeline(PURCHASE, policy, CARD, 60, [])
+    [ret] = [w for w in tl if w.label == "Return"]
+    assert ret.open_ended and ret.status == "open"
+    # Never a "closing" warning.
+    assert not [a for a in engine.alerts(PURCHASE, policy, CARD, 400, {0: 140.0}, [])
+                if a.kind == "window_closing"]
+
+
+def test_any_drop_below_paid_is_actionable_today_not_just_new_lows():
+    # 140 paid; drops to 120, back up to 150, then 130 (not a new low, still below paid).
+    walk = {0: 140.0, 2: 120.0, 4: 150.0, 6: 130.0}
+    [a] = [a for a in run(2, walk=walk) if a.kind == "price_drop_claimable"]
+    assert a.title == "Price dropped $20"
+    assert kinds(run(4, walk=walk)) == []  # price back above what was paid: nothing to claim
+    [b] = [a for a in run(6, walk=walk) if a.kind == "price_drop_claimable"]
+    assert b.title == "Price dropped $10" and b.money.refund == 10.0

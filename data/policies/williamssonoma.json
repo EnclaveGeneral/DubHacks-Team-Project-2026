@@ -1,0 +1,81 @@
+{
+  "id": "williamssonoma",
+  "name": "Williams Sonoma",
+  "domains": [
+    "williams-sonoma.com"
+  ],
+  "notes": "Price Match Guarantee mainly targets competitor prices; a search snippet suggests prior purchases are not eligible for price adjustments (unverified).",
+  "ingested_at": "2026-10-18T09:41:38Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.williams-sonoma.com/customer-service/return/",
+      "status": "ok",
+      "chars": 4173
+    },
+    {
+      "topic": "price_adjustment",
+      "url": "https://www.williams-sonoma.com/pages/williams-sonoma/price-match-guarantee/",
+      "status": "blocked",
+      "chars": 79
+    }
+  ],
+  "policy": {
+    "merchant": "Williams Sonoma",
+    "source_url": "https://www.williams-sonoma.com/customer-service/return/",
+    "return_window_days": {
+      "value": 30,
+      "quote": "Most items with proof of purchase can be returned within 30 days.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.williams-sonoma.com/customer-service/return/"
+    },
+    "exchange_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "price_match": {
+      "allowed": {
+        "value": false,
+        "quote": "Prior purchases are not eligible for price adjustments.",
+        "clause": null,
+        "confidence": "high",
+        "source_url": "https://www.williams-sonoma.com/customer-service/return/"
+      },
+      "window_days": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "conditions": []
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": "call 888.922.4108 or visit your local store",
+      "quote": "To initiate your return, please contact us at 888.922.4108 or visit us at your local store.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.williams-sonoma.com/customer-service/return/"
+    },
+    "retailer_id": "williamssonoma"
+  }
+}

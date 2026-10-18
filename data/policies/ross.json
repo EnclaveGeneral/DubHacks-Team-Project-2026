@@ -1,0 +1,75 @@
+{
+  "id": "ross",
+  "name": "Ross Stores",
+  "domains": [
+    "rossstores.com"
+  ],
+  "notes": "No price adjustment or price match policy found; return policy lives on the Contact Us page.",
+  "ingested_at": "2026-10-18T09:40:50Z",
+  "pages": [
+    {
+      "topic": "returns",
+      "url": "https://www.rossstores.com/contact-us/",
+      "status": "ok",
+      "chars": 12304
+    }
+  ],
+  "policy": {
+    "merchant": "Ross Stores",
+    "source_url": "https://www.rossstores.com/contact-us/",
+    "return_window_days": {
+      "value": 30,
+      "quote": "For merchandise (not used, worn, or altered) accompanied by the original receipt within 30 days of purchase, a full refund will be issued in the form of payment in which it was purchased.",
+      "clause": null,
+      "confidence": "high",
+      "source_url": "https://www.rossstores.com/contact-us/"
+    },
+    "exchange_window_days": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "price_match": {
+      "allowed": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "window_days": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high",
+        "source_url": null
+      },
+      "conditions": []
+    },
+    "manufacturer_warranty_months": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "returns_unlimited": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "claim_form_url": "",
+    "how_to_request": {
+      "value": null,
+      "quote": null,
+      "clause": null,
+      "confidence": "high",
+      "source_url": null
+    },
+    "retailer_id": "ross"
+  }
+}
