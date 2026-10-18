@@ -1,0 +1,120 @@
+[
+  {
+    "purchase": {
+      "order_id": "RO-10482",
+      "merchant": "Ridgeline Outfitters",
+      "sku": "RJ-140",
+      "item_name": "Ridgeline Rain Jacket",
+      "price_paid": 140.0,
+      "card_last4": "4417",
+      "purchase_day": 0,
+      "policy_url": "http://localhost:5173/policy",
+      "claim_form_url": "http://localhost:5173/claim"
+    },
+    "policy": {
+      "merchant": "Ridgeline Outfitters",
+      "source_url": "http://localhost:5173/policy",
+      "return_window_days": {
+        "value": 30,
+        "quote": "Unworn, unwashed items with original tags attached may be returned within 30 days of the purchase date for a full refund to the original payment method.",
+        "clause": "3.1",
+        "confidence": "high"
+      },
+      "exchange_window_days": {
+        "value": 30,
+        "quote": "Items may be exchanged for a different size or color within 30 days of the purchase date, subject to availability.",
+        "clause": "5.1",
+        "confidence": "high"
+      },
+      "price_match": {
+        "allowed": {
+          "value": true,
+          "quote": "If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+          "clause": "4.2",
+          "confidence": "high"
+        },
+        "window_days": {
+          "value": 14,
+          "quote": "If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+          "clause": "4.2",
+          "confidence": "high"
+        },
+        "conditions": [
+          {
+            "value": "Same item, same size and color, sold by Ridgeline Outfitters",
+            "quote": "Price adjustments apply only to the same item in the same size and color, sold by Ridgeline Outfitters.",
+            "clause": "4.3",
+            "confidence": "high"
+          }
+        ]
+      },
+      "manufacturer_warranty_months": {
+        "value": 12,
+        "quote": "Ridgeline outerwear is covered by a 1-year manufacturer warranty against defects in materials and workmanship from the purchase date.",
+        "clause": "6.1",
+        "confidence": "high"
+      },
+      "claim_form_url": "http://localhost:5173/claim"
+    },
+    "timeline": [
+      {
+        "label": "Price match",
+        "source": "merchant",
+        "opens_day": 0,
+        "closes_day": 14,
+        "status": "open",
+        "long_term": false,
+        "citation": {
+          "value": 14,
+          "quote": "If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+          "clause": "4.2",
+          "confidence": "high"
+        }
+      },
+      {
+        "label": "Return",
+        "source": "merchant",
+        "opens_day": 0,
+        "closes_day": 30,
+        "status": "open",
+        "long_term": false,
+        "citation": {
+          "value": 30,
+          "quote": "Unworn, unwashed items with original tags attached may be returned within 30 days of the purchase date for a full refund to the original payment method.",
+          "clause": "3.1",
+          "confidence": "high"
+        }
+      },
+      {
+        "label": "Manufacturer warranty",
+        "source": "merchant",
+        "opens_day": 0,
+        "closes_day": 365,
+        "status": "open",
+        "long_term": true,
+        "citation": {
+          "value": 12,
+          "quote": "Ridgeline outerwear is covered by a 1-year manufacturer warranty against defects in materials and workmanship from the purchase date.",
+          "clause": "6.1",
+          "confidence": "high"
+        }
+      },
+      {
+        "label": "Card extended warranty (may cover; confirm with your issuer)",
+        "source": "card",
+        "opens_day": 365,
+        "closes_day": 730,
+        "status": "open",
+        "long_term": true,
+        "citation": {
+          "value": 12,
+          "quote": "Extended Warranty Protection extends the original manufacturer's warranty by 1 additional year on eligible items with an original manufacturer's warranty of 3 years or less.",
+          "clause": "§2.1",
+          "confidence": "high"
+        }
+      }
+    ],
+    "lowest_seen": 140.0,
+    "claims_filed": []
+  }
+]

@@ -1,0 +1,35 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  color: #1d2a24;
+  background: #fafaf7;
+}
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #24473a;
+}
+
+.site-header a {
+  color: #fff;
+  margin-left: 16px;
+  text-decoration: none;
+}
+
+main {
+  max-width: 720px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+#claim-form {
+  display: grid;
+  gap: 6px;
+}
+
+#claim-form label {
+  margin-top: 10px;
+  font-weight: 600;
+}

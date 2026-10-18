@@ -1,0 +1,17 @@
+{
+  "values": [
+    { "key": "claim_type", "value": "price_adjustment", "reason": "Price match claim" },
+    { "key": "order_number", "value": "RO-10482", "reason": "From order confirmation" },
+    { "key": "item", "value": "Ridgeline Rain Jacket", "reason": "From order confirmation" },
+    { "key": "price_paid", "value": "140.00", "reason": "From order confirmation" },
+    { "key": "current_price", "value": "110.00", "reason": "Store price on day 3" },
+    { "key": "purchase_date", "value": "2026-10-18", "reason": "From order confirmation" },
+    {
+      "key": "explanation",
+      "value": "I bought the Ridgeline Rain Jacket (order RO-10482) for $140.00 on October 18, 2026. Ridgeline Outfitters now sells the same item for $110.00. Clause 4.2 of your policy states: \"If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.\" I am requesting an adjustment of $30.00.",
+      "reason": "Justification citing clause 4.2"
+    }
+  ],
+  "justification": "I bought the Ridgeline Rain Jacket (order RO-10482) for $140.00 on October 18, 2026. Ridgeline Outfitters now sells the same item for $110.00. Clause 4.2 of your policy states: \"If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.\" I am requesting an adjustment of $30.00.",
+  "unfilled": ["email"]
+}

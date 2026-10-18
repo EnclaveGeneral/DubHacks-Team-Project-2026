@@ -1,0 +1,26 @@
+{
+  "name": "backpocket-extension",
+  "displayName": "BackPocket",
+  "version": "0.1.0",
+  "description": "Reads the fine print on both sides of a purchase after you buy.",
+  "private": true,
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build"
+  },
+  "dependencies": {
+    "plasmo": "0.90.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.287",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "typescript": "5.6.3"
+  },
+  "manifest": {
+    "permissions": ["sidePanel", "storage", "alarms", "tabs"],
+    "host_permissions": ["http://localhost:5173/*", "http://localhost:8000/*"]
+  }
+}

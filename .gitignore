@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+service/backpocket.db
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Plasmo
+extension/.plasmo/
+extension/build/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
