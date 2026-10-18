@@ -75,7 +75,14 @@ export interface TrackedPurchase {
   policy: MerchantPolicy
   timeline: TimelineWindow[]
   lowest_seen: number
+  price_history: Record<string, number>
   claims_filed: string[]
+}
+
+export interface SelectedCard {
+  card_id: string
+  last4: string
+  benefits: CardBenefits
 }
 
 export interface Alert {

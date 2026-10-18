@@ -12,7 +12,7 @@ BASE_DATE = "2026-10-18"  # day 0 (demo purchase date)
 
 def store_server_url() -> str:
     # Read at call time so load_dotenv() in main.py has already run.
-    return os.environ.get("STORE_SERVER_URL", "http://localhost:8001")
+    return os.environ.get("STORE_SERVER_URL", "http://127.0.0.1:8001")
 
 
 def get() -> ClockState:

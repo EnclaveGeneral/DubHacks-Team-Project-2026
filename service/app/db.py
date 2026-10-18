@@ -1,10 +1,11 @@
 """SQLite storage. JSON blobs for models; the service is the record of truth."""
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / "backpocket.db"
+DB_PATH = Path(os.environ.get("BACKPOCKET_DB", Path(__file__).resolve().parent.parent / "backpocket.db"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS state (

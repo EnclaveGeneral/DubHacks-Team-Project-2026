@@ -1,43 +1,143 @@
+:root {
+  --ink: #1d2a24;
+  --muted: #5b6b63;
+  --line: #d6ddd9;
+  --merchant: #2f6f8f;
+  --card: #7a4fb5;
+  --good: #1f7a4d;
+  --warn: #c2410c;
+}
+
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
   font-size: 14px;
-  color: #1d2a24;
+  color: var(--ink);
   background: #fff;
 }
 
 .panel {
-  padding: 12px 16px 64px;
+  padding: 12px 16px 72px;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
 }
 
 h1 {
   font-size: 18px;
+  margin: 4px 0 8px;
 }
 
 h2 {
-  font-size: 13px;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #5b6b63;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 20px 0 8px;
 }
 
 .muted {
-  color: #5b6b63;
+  color: var(--muted);
+}
+
+.small {
+  font-size: 12px;
 }
 
 .error {
   color: #b42318;
 }
 
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button.primary {
+  margin-top: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--good);
+  color: #fff;
+}
+
+button.link {
+  border: none;
+  background: none;
+  color: var(--merchant);
+  padding: 0;
+}
+
+.confirm {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #fff1d6;
+  color: #8a5a00;
+  font-size: 11px;
+  font-style: normal;
+}
+
+/* Card */
+
+.card-chip {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--card);
+  border-radius: 8px;
+}
+
+.card-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.card-option:hover {
+  border-color: var(--card);
+}
+
+details {
+  margin-top: 6px;
+}
+
+.json {
+  max-height: 220px;
+  overflow: auto;
+  font-size: 11px;
+  background: #f5f7f6;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+/* Alerts */
+
 .alert {
-  border: 1px solid #d6ddd9;
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px 12px;
   margin-bottom: 10px;
 }
 
+.alert p {
+  margin: 6px 0;
+}
+
 .alert.price_drop_claimable {
-  border-left: 4px solid #1f7a4d;
+  border-left: 4px solid var(--good);
 }
 
 .alert.price_drop_declined {
@@ -45,15 +145,109 @@ h2 {
 }
 
 .alert.window_closing {
-  border-left: 4px solid #c2410c;
+  border-left: 4px solid var(--warn);
+}
+
+.alert.card_protection {
+  border-left: 4px solid var(--card);
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
 }
 
 blockquote {
   margin: 6px 0;
   padding-left: 8px;
-  border-left: 2px solid #d6ddd9;
+  border-left: 2px solid var(--line);
   font-style: italic;
 }
+
+blockquote .small {
+  font-style: normal;
+}
+
+/* Purchases */
+
+.purchase {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.purchase-head {
+  display: flex;
+  justify-content: space-between;
+}
+
+.timeline {
+  margin-top: 10px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 82px 1fr 84px;
+  gap: 8px;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.track {
+  position: relative;
+  height: 10px;
+  background: #f0f2f1;
+  border-radius: 5px;
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 5px;
+}
+
+.bar.merchant {
+  background: var(--merchant);
+}
+
+.bar.card {
+  background: var(--card);
+}
+
+.bar.closing_soon {
+  background: var(--warn);
+}
+
+.bar.closed {
+  opacity: 0.3;
+}
+
+.bar.claimed {
+  background: var(--good);
+}
+
+.today {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--ink);
+}
+
+.row-status {
+  text-align: right;
+}
+
+.long-term {
+  margin: 8px 0 0;
+  padding-left: 16px;
+}
+
+.long-term li.card {
+  color: var(--card);
+}
+
+/* Footer */
 
 footer {
   position: fixed;
@@ -65,5 +259,21 @@ footer {
   align-items: center;
   padding: 8px 16px;
   background: #f3f5f4;
-  border-top: 1px solid #d6ddd9;
+  border-top: 1px solid var(--line);
+}
+
+footer button {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+}
+
+footer button.on {
+  background: var(--ink);
+  color: #fff;
+}
+
+footer .reset {
+  margin-left: auto;
 }

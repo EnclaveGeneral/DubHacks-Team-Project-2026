@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 
-// TODO(A): full confirmation layout. Keep the JSON-LD block: the extension reads it.
+// The extension reads the JSON-LD block below. Keep its shape stable.
 export default function ConfirmationPage() {
   const { orderId = 'RO-10482' } = useParams()
 
@@ -18,18 +18,31 @@ export default function ConfirmationPage() {
     },
     paymentMethod: 'Visa ending 4417',
     potentialAction: [
-      { '@type': 'ViewAction', name: 'policy', target: `${location.origin}/policy` },
+      { '@type': 'ViewAction', name: 'policy', target: `${location.origin}/policy.html` },
       { '@type': 'ViewAction', name: 'claim', target: `${location.origin}/claim` },
     ],
   }
 
   return (
-    <section>
+    <section className="confirmation">
       <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       <h1>Thanks for your order</h1>
-      <p>Order {orderId}: Ridgeline Rain Jacket, $140.00, paid with Visa ending 4417.</p>
+      <p className="muted">A receipt has been sent to your email.</p>
+
+      <table className="order">
+        <tbody>
+          <tr><th>Order number</th><td>{orderId}</td></tr>
+          <tr><th>Date</th><td>October 18, 2026</td></tr>
+          <tr><th>Item</th><td>Ridgeline Rain Jacket, Spruce, M</td></tr>
+          <tr><th>Total</th><td>$140.00</td></tr>
+          <tr><th>Paid with</th><td>Visa ending 4417</td></tr>
+        </tbody>
+      </table>
+
       <p>
-        <Link to="/policy">Returns and price adjustment policy</Link>
+        <a href="/policy.html">Returns and price adjustment policy</a>
+        {' · '}
+        <Link to="/claim">Request a price adjustment or return</Link>
       </p>
     </section>
   )

@@ -140,7 +140,19 @@ class TrackedPurchase(BaseModel):
     policy: MerchantPolicy
     timeline: list[TimelineWindow]
     lowest_seen: float
-    claims_filed: list[str] = []
+    price_history: dict[int, float] = {}  # sim day -> store price observed that day
+    claims_filed: list[str] = []  # claim types, e.g. "price_match"
+
+
+class SelectedCard(BaseModel):
+    card_id: str
+    last4: str
+    benefits: CardBenefits
+
+
+class ClaimFiled(BaseModel):
+    claim_type: Literal["price_match", "return"]
+    confirmation: str | None = None
 
 
 # ---------- Form drafting ----------

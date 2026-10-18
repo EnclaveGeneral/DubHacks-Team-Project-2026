@@ -46,6 +46,8 @@ Then in Chrome: `chrome://extensions` → Developer mode → **Load unpacked** �
 
 Open http://localhost:5173 for the store. Reset everything with the **Reset** button in the side panel (or `POST localhost:8000/demo/reset`).
 
+Demo flow: **Buy now** → on the confirmation page tick **Protect this purchase** → skip to day **3** in the panel → **Prepare claim** → add an email and submit the form yourself → skip to days **20** and **28**.
+
 ## Tests
 
 ```sh
@@ -54,3 +56,16 @@ cd store-server && ../.venv/Scripts/python -m pytest -q
 ```
 
 `service/tests/test_fixtures.py` fails if a fixture drifts from the schemas or quotes text that isn't in `/content`.
+
+### Full demo walk in a real browser
+
+Drives the demo in Chromium with the extension loaded: protect the purchase, check the timeline, fill and submit the claim form on day 3, then check days 20 and 28. Run it with the three servers up.
+
+```sh
+.venv/Scripts/python -m pip install -r e2e/requirements.txt
+.venv/Scripts/python -m playwright install chromium
+cd extension && npx plasmo build && cd ..
+.venv/Scripts/python e2e/demo_walk.py            # add --headed to watch
+```
+
+It resets the demo first. The first run on a new policy text calls Claude (about 15 s); later runs use `service/app/cache/`.

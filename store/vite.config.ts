@@ -7,7 +7,5 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    // Policy text is imported from /content at the repo root.
-    fs: { allow: ['..'] },
   },
 })

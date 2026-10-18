@@ -1,0 +1,58 @@
+{
+  "return_window_days": {
+    "value": 30,
+    "quote": "3.1 Unworn, unwashed items with original tags attached may be returned within 30 days of the purchase date for a full refund to the original payment method.",
+    "clause": "3.1",
+    "confidence": "high"
+  },
+  "exchange_window_days": {
+    "value": 30,
+    "quote": "5.1 Items may be exchanged for a different size or color within 30 days of the purchase date, subject to availability.",
+    "clause": "5.1",
+    "confidence": "high"
+  },
+  "price_match_allowed": {
+    "value": true,
+    "quote": "4.2 If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+    "clause": "4.2",
+    "confidence": "high"
+  },
+  "price_match_window_days": {
+    "value": 14,
+    "quote": "4.2 If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+    "clause": "4.2",
+    "confidence": "high"
+  },
+  "price_match_conditions": [
+    {
+      "value": "One-time adjustment per purchase",
+      "quote": "4.2 If an item you purchased is sold by Ridgeline Outfitters at a lower price within 14 days of the purchase date, you may request a one-time price adjustment for the difference.",
+      "clause": "4.2",
+      "confidence": "high"
+    },
+    {
+      "value": "Must be the same item in the same size and color, sold by Ridgeline Outfitters",
+      "quote": "4.3 Price adjustments apply only to the same item in the same size and color, sold by Ridgeline Outfitters.",
+      "clause": "4.3",
+      "confidence": "high"
+    },
+    {
+      "value": "Lower prices from other retailers are not matched",
+      "quote": "We do not match prices from other retailers.",
+      "clause": "4.3",
+      "confidence": "high"
+    },
+    {
+      "value": "Request must be submitted via the Price Adjustment and Returns form with the order number",
+      "quote": "4.4 To request a price adjustment, submit the Price Adjustment and Returns form with your order number.",
+      "clause": "4.4",
+      "confidence": "high"
+    }
+  ],
+  "manufacturer_warranty_months": {
+    "value": 12,
+    "quote": "6.1 Ridgeline outerwear is covered by a 1-year manufacturer warranty against defects in materials and workmanship from the purchase date.",
+    "clause": "6.1",
+    "confidence": "high"
+  }
+}

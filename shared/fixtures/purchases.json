@@ -8,12 +8,12 @@
       "price_paid": 140.0,
       "card_last4": "4417",
       "purchase_day": 0,
-      "policy_url": "http://localhost:5173/policy",
+      "policy_url": "http://localhost:5173/policy.html",
       "claim_form_url": "http://localhost:5173/claim"
     },
     "policy": {
       "merchant": "Ridgeline Outfitters",
-      "source_url": "http://localhost:5173/policy",
+      "source_url": "http://localhost:5173/policy.html",
       "return_window_days": {
         "value": 30,
         "quote": "Unworn, unwashed items with original tags attached may be returned within 30 days of the purchase date for a full refund to the original payment method.",

@@ -1,26 +1,28 @@
 """BackPocket service. Routes from IMPLEMENTATION.md section 4.
 
-Routes marked TODO return 501 until their owner implements them.
+Add ?fresh=true to /purchases or /cards/{id}/select to skip the extraction cache.
 """
 
 import os
 from contextlib import asynccontextmanager
 
+import anthropic
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from . import cards, clock, db
+from . import cards, clock, db, extract, tracking
 from .schemas import (
     Alert,
-    CardBenefits,
     CardCatalogEntry,
+    ClaimFiled,
     ClockState,
     DraftRequest,
     DraftResponse,
     NewPurchaseRequest,
+    SelectedCard,
     TrackedPurchase,
 )
 
@@ -67,14 +69,20 @@ def set_clock(body: SetDay):
     return clock.set_day(body.day)
 
 
+DEMO_CARD = "northwind-4417"
+
+
 @app.post("/demo/reset", response_model=ClockState)
 def demo_reset():
     db.reset()
-    db.set_state("selected_card", "northwind-4417")
     try:
         httpx.post(f"{clock.store_server_url()}/admin/reset", timeout=2)
     except httpx.HTTPError:
         pass
+    try:
+        select_card(DEMO_CARD)  # cached extraction, so this is instant
+    except HTTPException:
+        pass  # no cache and no API key: shopper picks the card in the panel
     return clock.set_day(0)
 
 
@@ -86,44 +94,77 @@ def list_cards():
     return cards.CATALOG
 
 
-@app.post("/cards/{card_id}/select", response_model=CardBenefits)
-def select_card(card_id: str):
+@app.get("/cards/selected", response_model=SelectedCard | None)
+def get_selected_card():
+    return tracking.selected_card()
+
+
+@app.post("/cards/{card_id}/select", response_model=SelectedCard)
+def select_card(card_id: str, fresh: bool = False):
     card = cards.find(card_id)
     if card is None:
         raise HTTPException(404, "unknown card")
-    db.set_state("selected_card", card_id)
-    # TODO(B): extract.card_benefits(cards.guide_text(card)) with cache
-    raise HTTPException(501, "benefits extraction not implemented")
+    try:
+        benefits = extract.card_benefits(
+            cards.guide_text(card), card.card_id, card.display_name, fresh=fresh
+        )
+    except (extract.ExtractionError, anthropic.AnthropicError) as e:
+        raise HTTPException(502, f"Couldn't read the benefits guide: {e}")
+    selected = SelectedCard(card_id=card.card_id, last4=card.last4, benefits=benefits)
+    tracking.save_selected_card(selected)
+    return selected
 
 
-# ---------- Purchases + alerts (B) ----------
+# ---------- Purchases + alerts ----------
 
 
 @app.post("/purchases", response_model=TrackedPurchase)
-def add_purchase(body: NewPurchaseRequest):
-    # TODO(B): extract policy, run engine for timeline, store TrackedPurchase
-    raise HTTPException(501, "purchase tracking not implemented")
+def add_purchase(body: NewPurchaseRequest, fresh: bool = False):
+    if not body.policy_text.strip():
+        raise HTTPException(400, "policy_text is empty")
+    day = clock.get().day
+    purchase = body.purchase.model_copy(update={"purchase_day": day})
+    with tracking.lock:
+        existing = tracking.load(purchase.order_id)
+        if existing and not fresh:
+            return tracking.refresh(existing, day)
+    try:
+        policy = extract.merchant_policy(
+            body.policy_text, purchase.merchant, purchase.policy_url,
+            purchase.claim_form_url, fresh=fresh,
+        )
+    except (extract.ExtractionError, anthropic.AnthropicError) as e:
+        raise HTTPException(502, f"Couldn't read the store policy: {e}")
+    tp = TrackedPurchase(
+        purchase=purchase, policy=policy, timeline=[], lowest_seen=purchase.price_paid
+    )
+    with tracking.lock:
+        return tracking.refresh(tp, day)
 
 
 @app.get("/purchases", response_model=list[TrackedPurchase])
 def list_purchases():
-    # TODO(B)
-    return []
+    return tracking.refresh_all(clock.get().day)
 
 
 @app.get("/alerts", response_model=list[Alert])
-def list_alerts(since: int | None = None):
-    # TODO(B): evaluate every purchase at clock.get().day, update lowest_seen
-    return []
+def list_alerts():
+    day = clock.get().day
+    out: list[Alert] = []
+    for tp in tracking.refresh_all(day):
+        out.extend(tracking.alerts_for(tp, day))
+    return out
 
 
 @app.post("/claims/draft", response_model=DraftResponse)
 def draft_claim(body: DraftRequest):
-    # TODO(B): 409 with reason if engine says no claim is supported
+    # TODO(B, hours 12–15): 409 with reason if engine says no claim is supported
     raise HTTPException(501, "form drafter not implemented")
 
 
-@app.post("/purchases/{order_id}/claims")
-def mark_claim_filed(order_id: str):
-    # TODO(B)
-    raise HTTPException(501, "not implemented")
+@app.post("/purchases/{order_id}/claims", response_model=TrackedPurchase)
+def mark_claim_filed(order_id: str, body: ClaimFiled):
+    tp = tracking.mark_claim_filed(order_id, body.claim_type, clock.get().day)
+    if tp is None:
+        raise HTTPException(404, "unknown order")
+    return tp

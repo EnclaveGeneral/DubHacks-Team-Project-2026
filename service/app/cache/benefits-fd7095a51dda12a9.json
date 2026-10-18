@@ -1,0 +1,55 @@
+{
+  "earn_rate_points_per_dollar": {
+    "value": 1.5,
+    "quote": "You earn 1.5% cash back on every eligible purchase.",
+    "clause": "1.1",
+    "confidence": "high"
+  },
+  "point_value_cents": {
+    "value": 1.0,
+    "quote": "Cash back is earned as points, and each point is worth 1 cent.",
+    "clause": "1.2",
+    "confidence": "high"
+  },
+  "reversal_rule": {
+    "value": "threshold",
+    "quote": "Price adjustments or partial refunds of less than $50 do not reduce your cash back.",
+    "clause": "1.4",
+    "confidence": "low"
+  },
+  "reversal_threshold_dollars": {
+    "value": 50.0,
+    "quote": "Price adjustments or partial refunds of less than $50 do not reduce your cash back.",
+    "clause": "1.4",
+    "confidence": "high"
+  },
+  "protections": [
+    {
+      "type": "return_protection",
+      "extends_months": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high"
+      },
+      "max_original_warranty_months": {
+        "value": null,
+        "quote": null,
+        "clause": null,
+        "confidence": "high"
+      },
+      "window_days": {
+        "value": 90,
+        "quote": "Return Protection may refund you for an eligible item purchased with your Cascade Cash Visa card if the merchant will not accept the return within 90 days of the purchase date.",
+        "clause": "2.1",
+        "confidence": "high"
+      },
+      "max_amount_dollars": {
+        "value": 250.0,
+        "quote": "Return Protection is limited to $250 per item.",
+        "clause": "2.2",
+        "confidence": "high"
+      }
+    }
+  ]
+}

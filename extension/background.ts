@@ -1,4 +1,4 @@
-import { getAlerts, getClock } from "~lib/api"
+import { getAlerts } from "~lib/api"
 
 // Clicking the toolbar icon opens the side panel.
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error)
@@ -10,8 +10,7 @@ chrome.alarms.create("poll-alerts", { periodInMinutes: 0.5 })
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== "poll-alerts") return
   try {
-    const { day } = await getClock()
-    const alerts = await getAlerts(day)
+    const alerts = (await getAlerts()).filter((a) => a.kind !== "card_protection")
     await chrome.action.setBadgeText({ text: alerts.length ? String(alerts.length) : "" })
     await chrome.action.setBadgeBackgroundColor({ color: "#c2410c" })
   } catch {
