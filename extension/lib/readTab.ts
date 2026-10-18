@@ -1,3 +1,5 @@
+import { SITE } from "./api"
+
 // Reads the policy text from the shopper's open tab, on any store's site.
 // Runs in the page, so it sees the rendered page (works on single-page apps
 // and pages that block plain fetches) and can use computed styles to drop
@@ -55,6 +57,9 @@ export async function readActiveTab(): Promise<TabText> {
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
   if (!tab?.id || !tab.url || !/^https?:/.test(tab.url)) {
     throw new Error("Open a store's return or price-adjustment policy page first.")
+  }
+  if (tab.url.startsWith(SITE)) {
+    throw new Error("This is BackPocket itself. Open a store's return or price-adjustment policy page first.")
   }
   const [result] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },

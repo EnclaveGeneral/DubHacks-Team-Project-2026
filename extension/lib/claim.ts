@@ -18,15 +18,28 @@ async function activeTab(): Promise<chrome.tabs.Tab> {
   return tab
 }
 
-function waitForLoad(tabId: number): Promise<void> {
+function sameOrigin(a: string | undefined, b: string): boolean {
+  try {
+    return !!a && new URL(a).origin === new URL(b).origin
+  } catch {
+    return false
+  }
+}
+
+// `alreadyLoading`: a tab just created with the URL may finish before we listen,
+// so check its status once. Not for a tab we're about to navigate: it still
+// reports the old page as "complete".
+function waitForLoad(tabId: number, alreadyLoading = false): Promise<void> {
   return new Promise((resolve) => {
+    const done = () => {
+      chrome.tabs.onUpdated.removeListener(listener)
+      resolve()
+    }
     const listener = (id: number, info: { status?: string }) => {
-      if (id === tabId && info.status === "complete") {
-        chrome.tabs.onUpdated.removeListener(listener)
-        resolve()
-      }
+      if (id === tabId && info.status === "complete") done()
     }
     chrome.tabs.onUpdated.addListener(listener)
+    if (alreadyLoading) chrome.tabs.get(tabId).then((t) => t.status === "complete" && done(), () => {})
   })
 }
 
@@ -47,14 +60,26 @@ export async function prepareClaim(
   alert: Alert,
   clock: ClockState
 ): Promise<{ filled: string[]; failed: string[]; unfilled: string[] }> {
-  const tab = await activeTab()
-  // Always load a fresh copy of the form (the tab may be showing an earlier
-  // request's confirmation screen at the same URL).
   const url = tp.purchase.claim_form_url
-  const loaded = waitForLoad(tab.id!)
-  if (tab.url === url) await chrome.tabs.reload(tab.id!)
-  else await chrome.tabs.update(tab.id!, { url })
-  await loaded
+  const current = await activeTab()
+  // Reuse the active tab only if it's already on the store's site; otherwise
+  // open the form in a new tab rather than navigating away from what the
+  // shopper is looking at (e.g. the BackPocket website).
+  let tabId: number
+  if (sameOrigin(current.url, url)) {
+    tabId = current.id!
+    // Always load a fresh copy of the form (the tab may be showing an earlier
+    // request's confirmation screen at the same URL).
+    const loaded = waitForLoad(tabId)
+    if (current.url === url) await chrome.tabs.reload(tabId)
+    else await chrome.tabs.update(tabId, { url })
+    await loaded
+  } else {
+    const created = await chrome.tabs.create({ url, active: true })
+    tabId = created.id!
+    await waitForLoad(tabId, true)
+  }
+  const tab = { id: tabId }
   const { fields } = await sendToTab<{ fields: FormField[] }>(tab.id!, { type: "collect-fields" })
   if (!fields.length) throw new Error("No form found on the claim page.")
   const values = localDraft(fields, tp, alert, clock)
