@@ -28,17 +28,25 @@ async function fetchPrices(): Promise<PriceState> {
   return cache
 }
 
-// Live prices follow the demo calendar, so poll while the page is open.
+// Live prices follow the demo calendar, so poll while the tab is visible and
+// refresh as soon as it's shown again. Background tabs make no requests.
 export function usePrices(): PriceState {
   const [state, setState] = useState<PriceState>(cache)
   useEffect(() => {
     let alive = true
     const tick = () => fetchPrices().then((s) => alive && setState(s))
     tick()
-    const id = setInterval(tick, 3000)
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') tick()
+    }, 3000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tick()
+    }
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       alive = false
       clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])
   return state

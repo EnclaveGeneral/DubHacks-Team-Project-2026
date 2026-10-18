@@ -3,6 +3,7 @@ import type {
   CardCatalogEntry,
   ClockState,
   MerchantPolicy,
+  PanelState,
   Purchase,
   SelectedCard,
   TrackedPurchase
@@ -43,6 +44,9 @@ export const getCards = () => call<CardCatalogEntry[]>("/cards")
 export const getSelectedCard = () => call<SelectedCard | null>("/cards/selected")
 export const selectCard = (cardId: string) =>
   call<SelectedCard>(`/cards/${cardId}/select`, post())
+
+// Everything the side panel shows, in one request.
+export const getState = () => call<PanelState>("/state")
 
 export const getPurchases = () => call<TrackedPurchase[]>("/purchases")
 export const getAlerts = () => call<Alert[]>("/alerts")

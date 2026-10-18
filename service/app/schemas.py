@@ -206,3 +206,12 @@ class DraftResponse(BaseModel):
 class ClockState(BaseModel):
     day: int
     base_date: str  # ISO date of day 0; UI shows base_date + day
+
+
+class PanelState(BaseModel):
+    """Everything the side panel shows, in one poll."""
+
+    clock: ClockState
+    purchases: list["TrackedPurchase"]
+    alerts: list["Alert"]
+    selected_card: "SelectedCard | None"

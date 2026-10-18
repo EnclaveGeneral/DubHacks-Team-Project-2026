@@ -120,3 +120,10 @@ export interface ClockState {
   day: number
   base_date: string
 }
+
+export interface PanelState {
+  clock: ClockState
+  purchases: TrackedPurchase[]
+  alerts: Alert[]
+  selected_card: SelectedCard | null
+}

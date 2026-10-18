@@ -3,6 +3,7 @@
 Add ?fresh=true to /purchases or /cards/{id}/select to skip the extraction cache.
 """
 
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -23,6 +24,7 @@ from .schemas import (
     DraftResponse,
     MerchantPolicy,
     NewPurchaseRequest,
+    PanelState,
     ReadPolicyRequest,
     ReportPrice,
     SelectedCard,
@@ -36,6 +38,27 @@ async def lifespan(_app: FastAPI):
     db.init()
     yield
 
+
+class QuietPolling(logging.Filter):
+    """Keeps successful polling GETs out of uvicorn's access log, so the log
+    shows actions (POSTs) and errors. Polling still happens as before."""
+
+    def __init__(self, paths: tuple[str, ...]):
+        super().__init__()
+        self.paths = paths
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if not isinstance(args, tuple) or len(args) < 5:
+            return True
+        method, path, status = args[1], str(args[2]), args[4]
+        quiet = method == "GET" and isinstance(status, int) and status < 400
+        return not (quiet and path.split("?")[0].startswith(self.paths))
+
+
+logging.getLogger("uvicorn.access").addFilter(
+    QuietPolling(("/health", "/state", "/clock", "/purchases", "/alerts", "/cards"))
+)
 
 app = FastAPI(title="BackPocket service", lifespan=lifespan)
 
@@ -173,6 +196,18 @@ def report_price(order_id: str, body: ReportPrice):
 @app.get("/purchases", response_model=list[TrackedPurchase])
 def list_purchases():
     return tracking.refresh_all(clock.get().day)
+
+
+@app.get("/state", response_model=PanelState)
+def panel_state():
+    """One call for the side panel: refreshes each purchase once (one store
+    price lookup each) and returns the clock, purchases, alerts, and card."""
+    clk = clock.get()
+    purchases = tracking.refresh_all(clk.day)
+    alerts = [a for tp in purchases for a in tracking.alerts_for(tp, clk.day)]
+    return PanelState(
+        clock=clk, purchases=purchases, alerts=alerts, selected_card=tracking.selected_card()
+    )
 
 
 @app.get("/alerts", response_model=list[Alert])

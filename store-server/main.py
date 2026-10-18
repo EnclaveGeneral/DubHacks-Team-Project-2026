@@ -4,11 +4,32 @@ Knows nothing about BackPocket. The BackPocket service pushes the simulated
 day to /admin/clock so prices follow the demo calendar.
 """
 
+import logging
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+
+class QuietPolling(logging.Filter):
+    """Keeps successful polling GETs out of uvicorn's access log, so the log
+    shows actions (POSTs) and errors. Polling still happens as before."""
+
+    def __init__(self, paths: tuple[str, ...]):
+        super().__init__()
+        self.paths = paths
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if not isinstance(args, tuple) or len(args) < 5:
+            return True
+        method, path, status = args[1], str(args[2]), args[4]
+        quiet = method == "GET" and isinstance(status, int) and status < 400
+        return not (quiet and path.split("?")[0].startswith(self.paths))
+
+
+logging.getLogger("uvicorn.access").addFilter(QuietPolling(("/prices", "/price/")))
 
 app = FastAPI(title="Ridgeline store server")
 

@@ -2,11 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from "react"
 
 import PriceChart from "~components/PriceChart"
 import {
-  getAlerts,
   getCards,
-  getClock,
-  getPurchases,
-  getSelectedCard,
+  getState,
   readPolicy,
   reportPrice,
   resetDemo,
@@ -76,16 +73,11 @@ function SidePanel() {
 
   const refresh = useCallback(async () => {
     try {
-      const [c, p, a, sc] = await Promise.all([
-        getClock(),
-        getPurchases(),
-        getAlerts(),
-        getSelectedCard()
-      ])
-      setClock(c)
-      setPurchases(p)
-      setAlerts(a)
-      setCard(sc)
+      const s = await getState()
+      setClock(s.clock)
+      setPurchases(s.purchases)
+      setAlerts(s.alerts)
+      setCard(s.selected_card)
       setCardLoaded(true)
       setError(null)
     } catch (e) {
@@ -93,11 +85,20 @@ function SidePanel() {
     }
   }, [])
 
+  // Poll every 2 s only while the panel is visible, and refresh as soon as it
+  // becomes visible again. A hidden panel makes no requests.
   useEffect(() => {
     getCards().then(setCards).catch(() => {})
     refresh()
-    const id = setInterval(refresh, 2000)
-    return () => clearInterval(id)
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") refresh()
+    }, 2000)
+    const onVisible = () => document.visibilityState === "visible" && refresh()
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
   }, [refresh])
 
   const jump = async (day: number) => {
