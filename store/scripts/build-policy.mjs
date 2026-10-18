@@ -50,7 +50,7 @@ const html = `<!doctype html>
 <title>Return &amp; warranty policy | Ridgeline Outfitters</title>
 </head>
 <body>
-<div class="announcement">Free shipping on orders over $75. Free returns. <a href="/collections/new">Shop fall arrivals</a></div>
+<aside class="announcement" aria-label="Store announcement">Free shipping on orders over $75. Free returns. <a href="/collections/new">Shop fall arrivals</a></aside>
 <header class="site-header">
   <div class="wrap header-row">
     ${logo}

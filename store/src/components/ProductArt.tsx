@@ -36,8 +36,9 @@ export default function ProductArt({ garment, color, view = 'front', label }: Pr
     <svg
       className="product-art"
       viewBox={VIEWS[view]}
-      role="img"
-      aria-label={label}
+      // Named art is an image; unnamed art (thumbnails next to a product
+      // name) is decoration and hidden from screen readers.
+      {...(label ? { role: "img", "aria-label": label } : { "aria-hidden": true })}
       preserveAspectRatio="xMidYMid meet"
     >
       <ellipse cx="200" cy="462" rx="120" ry="12" fill="rgba(0,0,0,0.06)" />

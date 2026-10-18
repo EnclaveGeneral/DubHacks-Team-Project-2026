@@ -25,6 +25,8 @@ function render() {
   const bar = document.createElement("div")
   bar.id = BAR_ID
   bar.dataset.order = purchase.order_id
+  bar.setAttribute("role", "region")
+  bar.setAttribute("aria-label", "BackPocket")
   bar.setAttribute(
     "style",
     [

@@ -4,12 +4,13 @@
   --plane: #f6f6f4;
   --ink: #161816;
   --ink-2: #4d524f;
-  --muted: #7a7f7c;
+  --muted: #646966; /* >= 5:1 on all light surfaces */
   --line: #e6e6e1;
   --grid: #ecebe6;
   --axis: #c3c2b7;
   --series: #2a78d6;
   --good: #0f7a3d;
+  --on-good: #ffffff;
   --good-wash: rgba(12, 163, 12, 0.14);
   --good-bg: #eef8f1;
   --warn: #b45309;
@@ -34,6 +35,7 @@
     --axis: #45463f;
     --series: #3987e5;
     --good: #4cc36a;
+    --on-good: #0b1a10;
     --good-wash: rgba(12, 163, 12, 0.22);
     --good-bg: #1b2a1f;
     --warn: #f0a24a;
@@ -57,6 +59,7 @@
   --axis: #45463f;
   --series: #3987e5;
   --good: #4cc36a;
+  --on-good: #0b1a10;
   --good-wash: rgba(12, 163, 12, 0.22);
   --good-bg: #1b2a1f;
   --warn: #f0a24a;
@@ -409,7 +412,7 @@ button.primary {
   border: none;
   border-radius: 10px;
   background: var(--good);
-  color: #fff;
+  color: var(--on-good);
   font-weight: 600;
 }
 
@@ -887,4 +890,17 @@ button.primary:disabled {
   margin: 4px 0 16px;
   text-align: center;
   font-size: 12px;
+}
+
+/* Read by screen readers, not shown. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

@@ -55,6 +55,7 @@ export default function Dashboard() {
 
   return (
     <>
+      <h1 className="visually-hidden">Your purchases</h1>
       <section className="summary" aria-label="Summary">
         <div className="stat">
           <span className="stat-num">{state.purchases.length}</span>

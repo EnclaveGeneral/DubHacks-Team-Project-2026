@@ -33,10 +33,10 @@ function Header() {
   const { count } = useCart()
   return (
     <>
-      <div className="announcement">
+      <aside className="announcement" aria-label="Store announcement">
         Free shipping on orders over $75. Free returns.{' '}
         <Link to="/collections/new">Shop fall arrivals</Link>
-      </div>
+      </aside>
       <header className="site-header">
         <div className="wrap header-row">
           <Logo />
@@ -77,7 +77,7 @@ function Footer() {
           <p className="footer-note">Gear for wet trails and long weekends. Made to be repaired, not replaced.</p>
         </div>
         <div>
-          <h4>Shop</h4>
+          <h2>Shop</h2>
           <Link to="/collections/men">Men</Link>
           <Link to="/collections/women">Women</Link>
           <Link to="/collections/outerwear">Outerwear</Link>
@@ -85,14 +85,14 @@ function Footer() {
           <Link to="/collections/sale">Sale</Link>
         </div>
         <div>
-          <h4>Customer service</h4>
+          <h2>Customer service</h2>
           <Link to="/claim">Returns &amp; exchanges</Link>
           <a href="/policy.html">Return policy</a>
           <a href="/policy.html#clause-6.1">Warranty &amp; repairs</a>
           <Link to="/claim">Contact us</Link>
         </div>
         <div>
-          <h4>Stay in the loop</h4>
+          <h2>Stay in the loop</h2>
           <p className="footer-note">Trail reports and early access to sales.</p>
           <form className="newsletter" onSubmit={(e) => e.preventDefault()}>
             <input type="email" placeholder="Email address" aria-label="Email address" />

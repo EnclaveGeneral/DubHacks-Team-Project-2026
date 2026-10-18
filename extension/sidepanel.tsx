@@ -36,6 +36,9 @@ import type {
 
 import "./sidepanel.css"
 
+// The side panel page has no <html lang>; screen readers need it to pick a voice.
+document.documentElement.lang = "en"
+
 // The panel is the in-the-moment view: what's tracked from the store in the
 // current tab, the one thing to act on, and the next deadline. Price charts,
 // every deadline, the quoted clauses and the card terms live on the BackPocket
@@ -163,7 +166,7 @@ function SidePanel() {
   ).size
 
   return (
-    <div className="panel">
+    <main className="panel">
       <header className="top">
         <div className="brand">
           <span className="mark" aria-hidden="true" />
@@ -278,7 +281,7 @@ function SidePanel() {
           </button>
         </div>
       </footer>
-    </div>
+    </main>
   )
 }
 
@@ -555,7 +558,7 @@ function PurchaseSummary({ tp, clock, alerts }: { tp: TrackedPurchase; clock: Cl
           <h1>{p.item_name}</h1>
           <p className="muted small">
             {p.merchant} · paid {usd(p.price_paid)} on {fmtDate(isoDate(clock.base_date, p.purchase_day))}
-            {now < p.price_paid && <> · now {usd(now)}</>}
+            {now < p.price_paid && <> · <span className="nowrap">now {usd(now)}</span></>}
           </p>
         </div>
       </header>
@@ -564,8 +567,10 @@ function PurchaseSummary({ tp, clock, alerts }: { tp: TrackedPurchase; clock: Cl
         <AlertSummary alert={primary} tp={tp} clock={clock} />
       ) : (
         <p className="all-clear">
-          <span className="ok-dot" aria-hidden="true" /> Nothing to do. BackPocket is watching the price and your
-          deadlines.
+          <span className="ok-dot" aria-hidden="true" />
+          {tp.claims_filed.length > 0
+            ? "Request filed. Waiting on the store."
+            : "Nothing to do. BackPocket is watching the price and your deadlines."}
         </p>
       )}
 

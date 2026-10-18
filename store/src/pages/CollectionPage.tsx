@@ -55,6 +55,7 @@ export default function CollectionPage() {
           <p className="muted">New markdowns land often. <Link to="/collections/new">Shop new arrivals</Link></p>
         </div>
       )}
+      <h2 className="visually-hidden">Products</h2>
       <div className="product-grid">
         {items.map((p) => (
           <ProductCard key={p.sku} product={p} price={prices[p.sku]} />

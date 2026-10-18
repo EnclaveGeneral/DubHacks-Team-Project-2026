@@ -67,6 +67,19 @@ a {
 a.card-chip {
   color: var(--ink);
   text-decoration: none;
+  white-space: nowrap;
+}
+
+/* The card is already in the nav ("Your card"); on phones the chip doesn't fit. */
+@media (max-width: 480px) {
+  a.card-chip {
+    display: none;
+  }
+}
+
+/* "now $219.00" stays on one line. */
+.now-price {
+  white-space: nowrap;
 }
 
 .site-main {
@@ -297,7 +310,7 @@ a.primary {
   padding: 10px 14px;
   border-radius: 10px;
   background: var(--good);
-  color: #fff;
+  color: var(--on-good);
   font-weight: 600;
   text-align: center;
   text-decoration: none;
@@ -363,6 +376,11 @@ button.secondary:hover {
 
   .site-top-row {
     gap: 10px;
+  }
+
+  .site-nav a {
+    padding: 6px 8px;
+    white-space: nowrap;
   }
 
   .detail-head {
