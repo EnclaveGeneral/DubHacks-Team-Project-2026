@@ -77,12 +77,17 @@ function useActiveHost(): string | null {
         setHost(null)
       }
     }
+    // Only the active tab moving to a new page matters, not every title,
+    // favicon, or loading update from background tabs.
+    const onUpdated = (_id: number, change: { url?: string; status?: string }, tab: chrome.tabs.Tab) => {
+      if (tab.active && (change.url || change.status === "complete")) update()
+    }
     update()
     chrome.tabs.onActivated.addListener(update)
-    chrome.tabs.onUpdated.addListener(update)
+    chrome.tabs.onUpdated.addListener(onUpdated)
     return () => {
       chrome.tabs.onActivated.removeListener(update)
-      chrome.tabs.onUpdated.removeListener(update)
+      chrome.tabs.onUpdated.removeListener(onUpdated)
     }
   }, [])
   return host

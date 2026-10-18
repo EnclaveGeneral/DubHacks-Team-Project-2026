@@ -1,7 +1,7 @@
 import type { PlasmoCSConfig } from "plasmo"
 
 import { localDraft } from "../../shared/ui/draft"
-import { getAlerts, getClock, getPurchase, markClaimFiled } from "~lib/api"
+import { getAlerts, getClock, getPurchase, markClaimFiled, redeemHandoff, ServiceUnreachable } from "~lib/api"
 import type { FormField } from "~lib/types"
 
 export const config: PlasmoCSConfig = {
@@ -122,9 +122,10 @@ async function waitForForm(timeoutMs = 4000): Promise<HTMLFormElement | null> {
 }
 
 // Hand-off from the BackPocket website: its "Prepare claim form" button opens
-// this page as /claim#backpocket=<order id>&alert=<alert id>. Fill the form the
-// same way the side panel does, then leave it for the shopper to review and
-// submit. The hash is removed afterward so a reload doesn't fill it again.
+// this page as /claim#backpocket-handoff=<single-use code>. The form is filled
+// only if the service accepts the code (only BackPocket's own pages can get
+// one), so a link from anywhere else can't make the extension fill this form.
+// The shopper still reviews and submits it themselves.
 function showNote(text: string, ok = true) {
   const note = document.createElement("div")
   note.setAttribute(
@@ -142,15 +143,27 @@ function showNote(text: string, ok = true) {
 }
 
 async function handoffFromSite() {
-  const params = new URLSearchParams(location.hash.replace(/^#/, ""))
-  const orderId = params.get("backpocket")
-  if (!orderId) return
-  history.replaceState(null, "", location.pathname + location.search)
+  const token = new URLSearchParams(location.hash.replace(/^#/, "")).get("backpocket-handoff")
+  if (!token) return
+  const clearHash = () => history.replaceState(null, "", location.pathname + location.search)
+  let orderId: string
+  let alertId: string
+  try {
+    ;({ order_id: orderId, alert_id: alertId } = await redeemHandoff(token))
+    clearHash() // used up either way now
+  } catch (e) {
+    if (e instanceof ServiceUnreachable) {
+      // Keep the code so reloading the page can try again.
+      showNote("BackPocket couldn't reach its service. Start it, then reload this page.", false)
+    } else {
+      clearHash()
+      showNote(`BackPocket didn't fill this form: ${(e as Error).message}`, false)
+    }
+    return
+  }
   try {
     const [tp, alerts, clock] = await Promise.all([getPurchase(orderId), getAlerts(), getClock()])
-    const wanted = params.get("alert")
-    const mine = alerts.filter((a) => a.purchase_id === orderId && a.action)
-    const alert = mine.find((a) => a.id === wanted) ?? mine[0]
+    const alert = alerts.find((a) => a.purchase_id === orderId && a.id === alertId && a.action)
     if (!alert) throw new Error("There's nothing to claim for this purchase right now.")
     if (!(await waitForForm())) throw new Error("No form found on this page.")
     const values = localDraft(collectFields(), tp, alert, clock)

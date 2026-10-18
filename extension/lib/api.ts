@@ -1,79 +1,8 @@
-import type {
-  Alert,
-  CardCatalogEntry,
-  ClockState,
-  MerchantPolicy,
-  PanelState,
-  Purchase,
-  SelectedCard,
-  TrackedPurchase
-} from "./types"
+// The BackPocket service client lives in shared/ui/api.ts, shared with the
+// website. Only extension-specific helpers are defined here.
+export * from "../../shared/ui/api"
 
-export const SERVICE = "http://localhost:8000"
 // The BackPocket website (web/). "More details" links go here.
 export const SITE = "http://localhost:5174"
 
 export const openSite = (path = "/") => chrome.tabs.create({ url: `${SITE}${path}` })
-
-async function call<T>(path: string, init?: RequestInit): Promise<T> {
-  let res: Response
-  try {
-    res = await fetch(`${SERVICE}${path}`, {
-      headers: { "Content-Type": "application/json" },
-      ...init
-    })
-  } catch {
-    throw new Error("Can't reach the BackPocket service on localhost:8000.")
-  }
-  if (!res.ok) {
-    let detail = `${res.status}`
-    try {
-      detail = (await res.json()).detail ?? detail
-    } catch {}
-    throw new Error(detail)
-  }
-  return res.json()
-}
-
-const post = (body?: unknown): RequestInit => ({
-  method: "POST",
-  body: body === undefined ? undefined : JSON.stringify(body)
-})
-
-export const getClock = () => call<ClockState>("/clock")
-export const setDay = (day: number) => call<ClockState>("/clock", post({ day }))
-// Reset the demo and re-add the fictional-store purchases the website shows.
-export const resetDemo = () => call<ClockState>("/demo/reset?seed=true", post())
-
-export const getCards = () => call<CardCatalogEntry[]>("/cards")
-export const getSelectedCard = () => call<SelectedCard | null>("/cards/selected")
-export const selectCard = (cardId: string) =>
-  call<SelectedCard>(`/cards/${cardId}/select`, post())
-
-// Everything the side panel shows, in one request.
-export const getState = () => call<PanelState>("/state")
-
-export const getPurchases = () => call<TrackedPurchase[]>("/purchases")
-export const getPurchase = (orderId: string) =>
-  call<TrackedPurchase>(`/purchases/${encodeURIComponent(orderId)}`)
-export const getAlerts = () => call<Alert[]>("/alerts")
-
-export const trackPurchase = (
-  purchase: Purchase,
-  policyText: string,
-  manual = false,
-  retailerId: string | null = null
-) =>
-  call<TrackedPurchase>(
-    "/purchases",
-    post({ purchase, policy_text: policyText, manual, retailer_id: retailerId })
-  )
-
-export const readPolicy = (url: string, text: string, siteName: string | null) =>
-  call<MerchantPolicy>("/policies/read", post({ url, text, site_name: siteName }))
-
-export const reportPrice = (orderId: string, price: number) =>
-  call<TrackedPurchase>(`/purchases/${encodeURIComponent(orderId)}/price`, post({ price }))
-
-export const markClaimFiled = (orderId: string, claimType: "price_match" | "return") =>
-  call<TrackedPurchase>(`/purchases/${encodeURIComponent(orderId)}/claims`, post({ claim_type: claimType }))

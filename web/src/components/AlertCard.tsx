@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { draftMessage } from '../../../shared/ui/draft'
 import { actionLabel, alertIcon, alertTone, explainAlert } from '../../../shared/ui/explain'
 import type { Alert, ClockState, TrackedPurchase } from '../../../shared/ui/types'
-import { markClaimFiled } from '../api.ts'
+import { createHandoff, markClaimFiled } from '../api.ts'
 import { useBackPocket } from '../state.tsx'
 import Quote from './Quote.tsx'
 
@@ -30,9 +30,28 @@ export default function AlertCard({ alert, tp, clock, autoDraft = false }: Props
   const claimType = alert.action === 'prepare_return' ? 'return' : 'price_match'
 
   // The extension fills the store's own form; the shopper reviews it and submits.
-  const handoff = formUrl
-    ? `${formUrl}#backpocket=${encodeURIComponent(tp.purchase.order_id)}&alert=${encodeURIComponent(alert.id)}`
-    : null
+  // The form opens with a single-use code from the service, so only this button
+  // (not any link to the form) can make the extension fill it.
+  const openForm = async () => {
+    if (!formUrl) return
+    setErr(null)
+    // Open the tab now, inside the click, so popup blockers allow it; point it
+    // at the form once the code arrives.
+    const tab = window.open('about:blank', '_blank')
+    try {
+      const { token } = await createHandoff(tp.purchase.order_id, alert.id)
+      const url = `${formUrl}#backpocket-handoff=${encodeURIComponent(token)}`
+      if (tab) {
+        tab.opener = null
+        tab.location.href = url
+      } else {
+        window.open(url, '_blank', 'noreferrer')
+      }
+    } catch (e) {
+      tab?.close()
+      setErr((e as Error).message)
+    }
+  }
 
   const markSent = async () => {
     setBusy(true)
@@ -42,6 +61,8 @@ export default function AlertCard({ alert, tp, clock, autoDraft = false }: Props
       await refresh()
     } catch (e) {
       setErr((e as Error).message)
+    } finally {
+      // refresh() swallows its own errors, and the card may stay mounted.
       setBusy(false)
     }
   }
@@ -70,19 +91,20 @@ export default function AlertCard({ alert, tp, clock, autoDraft = false }: Props
           <Quote key={i} c={c} policyUrl={tp.policy.source_url} />
         ))}
 
-        {label && handoff && (
+        {label && formUrl && (
           <>
-            <a className="primary" href={handoff} target="_blank" rel="noreferrer">
+            <button className="primary" onClick={openForm}>
               {label}
-            </a>
+            </button>
             <p className="small muted">
               Opens the store's form and fills it in with the BackPocket extension. Check the highlighted fields,
               then submit it yourself.
             </p>
+            {err && message === null && <p className="error small">{err}</p>}
           </>
         )}
 
-        {label && !handoff && !message && (
+        {label && !formUrl && !message && (
           <button className="primary" onClick={() => setMessage(draftMessage(tp, alert, clock))}>
             {label}
           </button>

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { PanelState } from '../../shared/ui/types'
 import * as api from './api'
 
@@ -19,15 +19,37 @@ const POLL_MS = 3000
 export function BackPocketProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PanelState | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Each request gets a number; only the newest one may update the page, so a
+  // slow poll that started before a day change can't put the old day back.
+  const latest = useRef(0)
 
   const refresh = useCallback(async () => {
+    const mine = ++latest.current
     try {
-      setState(await api.getState())
+      const next = await api.getState()
+      if (mine !== latest.current) return
+      setState(next)
       setError(null)
     } catch (e) {
-      setError((e as Error).message)
+      if (mine === latest.current) setError((e as Error).message)
     }
   }, [])
+
+  // Day and reset buttons: a failure shows in the error banner instead of
+  // disappearing as an unhandled promise.
+  const act = useCallback(
+    async (change: () => Promise<unknown>) => {
+      latest.current++ // anything already in flight is now stale
+      try {
+        await change()
+      } catch (e) {
+        setError((e as Error).message)
+        return
+      }
+      await refresh()
+    },
+    [refresh],
+  )
 
   // Poll only while the tab is visible, and refresh as soon as it is again.
   useEffect(() => {
@@ -48,16 +70,10 @@ export function BackPocketProvider({ children }: { children: ReactNode }) {
       state,
       error,
       refresh,
-      jump: async (day) => {
-        await api.setDay(Math.max(0, day))
-        await refresh()
-      },
-      reset: async () => {
-        await api.resetDemo()
-        await refresh()
-      },
+      jump: (day) => act(() => api.setDay(Math.max(0, day))),
+      reset: () => act(() => api.resetDemo()),
     }),
-    [state, error, refresh],
+    [state, error, refresh, act],
   )
   return <BackPocket.Provider value={value}>{children}</BackPocket.Provider>
 }

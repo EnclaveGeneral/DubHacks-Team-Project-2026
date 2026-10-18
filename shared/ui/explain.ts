@@ -17,7 +17,10 @@ export function explainAlert(alert: Alert, tp: TrackedPurchase, clock: ClockStat
   const pm = tp.timeline.find((w) => w.label === "Price match")
   const ret = tp.timeline.find((w) => w.label === "Return")
   const returnLeft = ret ? Math.max(0, ret.closes_day - clock.day) : null
-  const pending = alert.body.includes("pending")
+  // A filed price adjustment the store hasn't answered yet. Later return
+  // offers count it as approved (the engine's effective_paid), so say so.
+  const pending =
+    tp.claims_filed.includes("price_match") && (alert.kind === "return_rebuy" || alert.kind === "window_closing")
 
   // What the shopper ends up with, after card points are taken back.
   const outcome = (mm: NonNullable<typeof m>, verb: "get" | "save") =>

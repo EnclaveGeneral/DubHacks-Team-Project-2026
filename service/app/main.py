@@ -5,6 +5,9 @@ Add ?fresh=true to /purchases or /cards/{id}/select to skip the extraction cache
 
 import logging
 import os
+import secrets
+import threading
+import time
 from contextlib import asynccontextmanager
 
 import anthropic
@@ -283,3 +286,46 @@ def mark_claim_filed(order_id: str, body: ClaimFiled):
     if tp is None:
         raise HTTPException(404, "unknown order")
     return tp
+
+
+# ---------- Website -> store form hand-off ----------
+#
+# The website's "Prepare claim form" opens the store's form with a single-use
+# code in the URL; the extension fills the form only if the code redeems. CORS
+# limits who can create codes to the website, the store, and the extension, so
+# an arbitrary page linking to the form can't make the extension fill it.
+
+HANDOFF_TTL_S = 300
+_handoffs: dict[str, tuple[float, str, str]] = {}  # token -> (expires_at, order_id, alert_id)
+_handoffs_lock = threading.Lock()
+
+
+class HandoffRequest(BaseModel):
+    order_id: str
+    alert_id: str
+
+
+@app.post("/handoffs")
+def create_handoff(body: HandoffRequest):
+    day = clock.get().day
+    tp = tracking.load(body.order_id)
+    if tp is None:
+        raise HTTPException(404, "unknown order")
+    if not any(a.id == body.alert_id and a.action for a in tracking.alerts_for(tp, day)):
+        raise HTTPException(409, "There's nothing to prepare for this purchase right now.")
+    token = secrets.token_urlsafe(16)
+    now = time.monotonic()
+    with _handoffs_lock:
+        for t in [t for t, (exp, _, _) in _handoffs.items() if exp < now]:
+            del _handoffs[t]
+        _handoffs[token] = (now + HANDOFF_TTL_S, body.order_id, body.alert_id)
+    return {"token": token}
+
+
+@app.post("/handoffs/{token}/redeem")
+def redeem_handoff(token: str):
+    with _handoffs_lock:
+        entry = _handoffs.pop(token, None)
+    if entry is None or entry[0] < time.monotonic():
+        raise HTTPException(404, "This link has expired or was already used. Start again from BackPocket.")
+    return {"order_id": entry[1], "alert_id": entry[2]}
